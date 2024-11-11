@@ -1,46 +1,36 @@
-package Creation;
-
-import util.Constants;
+package util;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 
 public class FolderReader {
 
-    private File[] fileList; // TODO If files are saved in map, no need for fileList
-    HashMap<File, String> hashFiles = new HashMap<>();
+    private HashMap<File, String> hashedFiles = new HashMap<>();
     private String pathFolder;
 
     public FolderReader(String path) {
         this.pathFolder = path;
-        loadContent();
-        System.out.println(Arrays.toString(fileList)); //Print files inside folder
+        File[] fileList = new File(this.pathFolder).listFiles(); // TODO Need for filter?
 
         for (File file : fileList) {
             try {
                String hash = calculateFileHash(file);
-                hashFiles.put(file, hash);
+               hashedFiles.put(file, hash);
             } catch (NoSuchAlgorithmException | IOException e) {
                 System.err.println("Error when calculating Hashes " + e.getMessage());
             }
         }
-
-        System.out.println(hashFiles);
     }
 
-    public void loadContent() {
-        this.fileList = new File(this.pathFolder).listFiles();
-        // TODO Need for filter?
+    public HashMap<File, String> getHashedFiles() {
+        return hashedFiles;
     }
 
-    public static String calculateFileHash(File file) throws NoSuchAlgorithmException, IOException {
+    private static String calculateFileHash(File file) throws NoSuchAlgorithmException, IOException {
         MessageDigest messageDigester = MessageDigest.getInstance("SHA-256");
         try (FileInputStream stream = new FileInputStream(file)) {
             byte[] byteArray = new byte[Constants.BLOCK_SIZE];

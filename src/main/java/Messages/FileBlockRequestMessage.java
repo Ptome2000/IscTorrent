@@ -1,4 +1,4 @@
-package Creation;
+package Messages;
 
 import util.Constants;
 
@@ -16,6 +16,16 @@ public class FileBlockRequestMessage {
         this.length = length;
     }
 
+    public String getFileHash() {
+        return fileHash;
+    }
 
+    public int getOffset() {
+        return offset;
+    }
+
+    public int getLength() {
+        return length;
+    }
 
 }

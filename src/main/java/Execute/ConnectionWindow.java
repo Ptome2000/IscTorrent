@@ -1,7 +1,6 @@
 package Execute;
 
-import Creation.NewConnectionRequest;
-
+//import Messages.NewConnectionRequest;
 import javax.swing.*;
 import java.awt.*;
 
@@ -13,10 +12,13 @@ public class ConnectionWindow extends JDialog {
     private JButton cancelButton;
     private JButton okButton;
 
+    private final DownloadsWindow downloadsWindow;
+
     public ConnectionWindow(DownloadsWindow downloadsWindow) {
         super(downloadsWindow, "Connect to node", true);
         this.setSize(600, 100);
         this.setLayout(new FlowLayout());
+        this.downloadsWindow = downloadsWindow;
         createWindow();
         this.setLocationRelativeTo(downloadsWindow);
         listenToCommands();
@@ -48,8 +50,7 @@ public class ConnectionWindow extends JDialog {
         this.okButton.addActionListener(e -> {
             String address = addressInput.getText();
             String port = portInput.getText();
-            System.out.println("Connected to the address: " + address + " in the port: " + port);
-            NewConnectionRequest request = new NewConnectionRequest();
+            this.downloadsWindow.node.connectToNode(address, Integer.parseInt(port));
             this.dispose();
         });
     }

@@ -1,5 +1,7 @@
 package Execute;
 
+import Nodes.Node;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -16,11 +18,14 @@ public class DownloadsWindow extends JFrame {
     private JButton downloadButton;
     private JButton connectButton;
 
-    public DownloadsWindow() {
+    final Node node;
+
+    public DownloadsWindow(Node node) {
         super("Search Files");
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setSize(800, 600);
         this.setLayout(new BorderLayout());
+        this.node = node;
 
         createHeader();
         createList();
