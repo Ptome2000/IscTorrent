@@ -1,6 +1,7 @@
 package Nodes;
 
 import Messages.NewConnectionRequest;
+import Messages.NewDisconnectionRequest;
 import Messages.WordSearchMessage;
 import util.Connection;
 import util.FolderReader;
@@ -11,9 +12,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class Node {
 
@@ -41,26 +40,6 @@ public class Node {
          }).start();
     }
 
-    public void startListening() throws IOException {
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
-            while(true) {
-                Socket socket = serverSocket.accept();
-                this.in = new ObjectInputStream(socket.getInputStream());
-                Object receivedObject = in.readObject();
-
-                if (!activeConnections.contains(socket) && receivedObject instanceof NewConnectionRequest request) {
-                    System.out.println("Received connection request from " + request.getAddress() + ":" + request.getPort());
-                    Connection conn = new Connection(request.getAddress(), request.getPort());
-                    activeConnections.add(conn);
-                    System.out.println(activeConnections);
-                }
-            }
-
-        } catch (ClassNotFoundException e) {
-            System.err.println("Problem while receiving a new Connection: " + e.getMessage());
-        }
-    }
-
     // Validate if a connection already exists with the address and port combo
     private boolean validateRequest(String address, int port) {
         if (activeConnections.isEmpty()) return true;
@@ -78,7 +57,7 @@ public class Node {
             try {
                 Socket socket = new Socket(address, port);
                 this.out = new ObjectOutputStream(socket.getOutputStream());
-                Connection conn = new Connection(address, port);
+                Connection conn = new Connection(address, port, socket);
                 activeConnections.add(conn);
                 out.writeObject(request);
             } catch (IOException e) {
@@ -91,11 +70,25 @@ public class Node {
         }
     }
 
-    public Set<FileSearchResult> searchFiles(WordSearchMessage searchedWord) {
+    public void closeConnection(Connection connection) {
+        Socket socket = connection.getSocket();
+        NewDisconnectionRequest request = new NewDisconnectionRequest(this.address, this.port);
+        try {
+            // TODO: With Bugs, fix later
+            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+            out.writeObject(request);
+            activeConnections.remove(connection);
+            socket.close();
+        } catch (IOException e) {
+            System.err.println("Problem while closing connection: " + e.getMessage());
+        }
+    }
+
+    public List<FileSearchResult> searchFiles(WordSearchMessage searchedWord) {
 
         // TODO - Create thread to deal with incoming requests
 
-        Set<FileSearchResult> results = new HashSet<>();
+        List<FileSearchResult> results = new ArrayList<>();
         HashMap<File, String> files = directory.getHashedFiles();
         for (File file : files.keySet()) {
             if (file.getName().contains(searchedWord.getKeyword())) {
@@ -103,6 +96,7 @@ public class Node {
                 results.add(
                         new FileSearchResult(searchedWord, file.getName(),
                                 fileHash, file.length(), this.address, this.port));
+                System.out.println(file.getName());
             }
         }
 
@@ -111,7 +105,11 @@ public class Node {
 
     private void requestSearch(String keyWord) {
         WordSearchMessage searchedWord = new WordSearchMessage(keyWord, this.port);
+        // TODO: Send the message for the out
+    }
 
+    public Set<Connection> getActiveConnections() {
+        return activeConnections;
     }
 
 }

@@ -73,6 +73,7 @@ public class DownloadsWindow extends JFrame {
 
     private void showConnectionWindow() {
         this.connectionWindow.setVisible(true);
+        this.connectionWindow.updateConnectionList();
     }
 
     private void listenToCommands() {

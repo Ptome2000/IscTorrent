@@ -1,13 +1,17 @@
 package util;
 
+import java.net.Socket;
+
 public class Connection {
 
     private final String address;
     private final int port;
+    private final Socket socket;
 
-    public Connection(String address, int port) {
+    public Connection(String address, int port, Socket socket) {
         this.address = address;
         this.port = port;
+        this.socket = socket;
     }
 
     public String getAddress() {
@@ -16,6 +20,10 @@ public class Connection {
 
     public int getPort() {
         return port;
+    }
+
+    public Socket getSocket() {
+        return socket;
     }
 
     public boolean equals(String address, int port) {
