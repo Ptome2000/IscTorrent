@@ -22,6 +22,8 @@ public class Node {
     private Set<Connection> activeConnections;
     private ObjectInputStream in;
     private ObjectOutputStream out;
+    private NodeListener listener;
+
 
     public Node(String address, int port, String folderPath) {
         this.address = address;
@@ -30,14 +32,8 @@ public class Node {
         this.activeConnections = new HashSet<>();
         System.out.println(directory.getHashedFiles());
 
-        // TODO: Replace for Listener Thread
-         new Thread(() -> {
-             try {
-                 startListening();
-             } catch (IOException e) {
-
-             }
-         }).start();
+        this.listener = new NodeListener(this, port);
+        listener.start();
     }
 
     // Validate if a connection already exists with the address and port combo
