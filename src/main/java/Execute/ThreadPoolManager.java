@@ -15,12 +15,12 @@ public class ThreadPoolManager {
         this.threadPool = Executors.newFixedThreadPool(numThreads);
     }
 
-    // Método para submeter uma tarefa de download ou pesquisa
+    // Méttodo para submeter uma tarefa de download ou pesquisa
     public void submitTask(Runnable task) {
         threadPool.submit(task);
     }
 
-    // Método para encerrar a thread pool de forma controlada
+    //Méttodo para encerrar a thread pool de forma controlada
     public void shutdown() {
         threadPool.shutdown();
         try {
