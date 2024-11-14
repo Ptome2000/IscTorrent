@@ -1,5 +1,7 @@
 package Nodes;
 
+import Execute.ConnectionListener;
+import Execute.DownloadsWindow;
 import Messages.NewConnectionRequest;
 import Messages.NewDisconnectionRequest;
 import Messages.WordSearchMessage;
@@ -14,8 +16,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 
-public class Node {
 
+
+public class Node {
+    private ConnectionListener connectionListener;
     private final String address;
     private final int port;
     private FolderReader directory;
@@ -36,6 +40,23 @@ public class Node {
         listener.start();
     }
 
+    public void setConnectionListener(ConnectionListener connectionListener) {
+        this.connectionListener = connectionListener;
+    }
+
+    private void notifyConnectionUpdated() {
+        if (connectionListener != null) {
+            connectionListener.onConnectionUpdated();
+        }
+    }
+
+    private void notifyConnectionError(String errorMessage) {
+        if (connectionListener != null) {
+            connectionListener.onConnectionError(errorMessage);
+        }
+    }
+
+
     // Validate if a connection already exists with the address and port combo
     private boolean validateRequest(String address, int port) {
         if (activeConnections.isEmpty()) return true;
@@ -49,22 +70,46 @@ public class Node {
 
     public void connectToNode(String address, int port) {
         if (!(this.address.equals(address) && port == this.port) && validateRequest(address, port)) {
-            NewConnectionRequest request = new NewConnectionRequest(this.address, this.port); // The info sent is from the sender Node
+            NewConnectionRequest request = new NewConnectionRequest(this.address, this.port); // Informações do nó remetente
             try {
-                Socket socket = new Socket(address, port);
-                this.out = new ObjectOutputStream(socket.getOutputStream());
-                Connection conn = new Connection(address, port, socket);
+                // Cria a conexão e armazena o Socket e o ObjectOutputStream na classe Connection
+                Connection conn = new Connection(address, port);
                 activeConnections.add(conn);
+
+                // Envia a solicitação de nova conexão usando o ObjectOutputStream da Connection
+                ObjectOutputStream out = conn.getOutputStream();
                 out.writeObject(request);
+                out.flush(); // Garante que a mensagem seja enviada imediatamente
+
+                notifyConnectionUpdated();
+                System.out.println("Conexão estabelecida e adicionada: " + address + ":" + port);
             } catch (IOException e) {
-                System.err.println("Problem while establishing connection: " + e.getMessage());
+                notifyConnectionError("Erro ao estabelecer conexão: " + e.getMessage());
+                System.err.println("Problema ao estabelecer conexão: " + e.getMessage());
             }
-            System.out.println(activeConnections);
         } else {
-            // TODO: Remove and add an alert to the connection window
-            System.out.println("Could not establish connection to " + address + ":" + port);
+            notifyConnectionError("Conexão com " + address + ":" + port + " já existe ou é inválida.");
+            System.out.println("Não foi possível estabelecer conexão com " + address + ":" + port);
         }
     }
+
+    public void sendMessageToNode(String message, String address, int port) {
+        for (Connection conn : activeConnections) {
+            if (conn.getAddress().equals(address) && conn.getPort() == port) {
+                try {
+                    ObjectOutputStream out = conn.getOutputStream();
+                    out.writeObject(message);
+                    out.flush();
+                    System.out.println("Mensagem enviada para " + address + ":" + port);
+                } catch (IOException e) {
+                    System.err.println("Erro ao enviar mensagem: " + e.getMessage());
+                }
+                break;
+            }
+        }
+    }
+
+
 
     public void closeConnection(Connection connection) {
         Socket socket = connection.getSocket();
@@ -99,10 +144,33 @@ public class Node {
         return results;
     }
 
-    private void requestSearch(String keyWord) {
-        WordSearchMessage searchedWord = new WordSearchMessage(keyWord, this.port);
-        // TODO: Send the message for the out
+
+
+    public void requestSearch(String keyword) {
+        WordSearchMessage searchMessage = new WordSearchMessage(keyword, this.port);
+        System.out.println("Enviando mensagem de pesquisa: " + keyword);
+
+        for (Connection connection : activeConnections) {
+            try {
+                ObjectOutputStream out = connection.getOutputStream(); // Usa o ObjectOutputStream persistente
+                out.writeObject(searchMessage);
+                out.flush();
+                System.out.println("Mensagem de pesquisa enviada para: " + connection.getAddress() + ":" + connection.getPort());
+                // Não feche o Socket nem o ObjectOutputStream aqui, ele permanece aberto
+            } catch (IOException e) {
+                System.err.println("Erro ao enviar mensagem de pesquisa: " + e.getMessage());
+            }
+        }
     }
+
+
+
+    public void processSearchResults(List<FileSearchResult> results) {
+        if (connectionListener instanceof DownloadsWindow) {
+            ((DownloadsWindow) connectionListener).updateSearchResults(results);
+        }
+    }
+
 
     public Set<Connection> getActiveConnections() {
         return activeConnections;

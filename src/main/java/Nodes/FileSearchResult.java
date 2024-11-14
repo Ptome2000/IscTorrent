@@ -2,7 +2,9 @@ package Nodes;
 
 import Messages.WordSearchMessage;
 
-public class FileSearchResult {
+import java.io.Serializable;
+
+public class FileSearchResult implements Serializable {
 
     private WordSearchMessage keyWord;
     private String hash;

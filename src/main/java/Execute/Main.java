@@ -17,7 +17,7 @@ public class Main {
         Node n2 = new Node("localhost", 8082, "files/N2");
         DownloadsWindow downloadsWindow2 = new DownloadsWindow(n2);
 
-        WordSearchMessage w = new WordSearchMessage("cat", 8081);
+        WordSearchMessage w = new WordSearchMessage("dog", 8081);
         n2.searchFiles(w);
 
     }

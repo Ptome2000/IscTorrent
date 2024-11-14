@@ -1,13 +1,15 @@
 package Execute;
 
+import Nodes.FileSearchResult;
 import Nodes.Node;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 
-public class DownloadsWindow extends JFrame {
+public class DownloadsWindow extends JFrame implements ConnectionListener {
 
     private final ConnectionWindow connectionWindow;
     private JPanel searchHeader;
@@ -18,6 +20,11 @@ public class DownloadsWindow extends JFrame {
     private JButton downloadButton;
     private JButton connectButton;
 
+    private JTextField searchInput;  // Movido para ser uma variável de instância
+
+    private JList<String> searchResultsList;
+    private DefaultListModel<String> searchResultsModel;
+
     final Node node;
 
     public DownloadsWindow(Node node) {
@@ -26,6 +33,7 @@ public class DownloadsWindow extends JFrame {
         this.setSize(800, 600);
         this.setLayout(new BorderLayout());
         this.node = node;
+        node.setConnectionListener(this);
 
         createHeader();
         createList();
@@ -34,6 +42,11 @@ public class DownloadsWindow extends JFrame {
         this.add(searchHeader, BorderLayout.NORTH);
         this.add(filesPane, BorderLayout.CENTER);
         this.add(buttonPanel, BorderLayout.EAST);
+        this.searchResultsModel = new DefaultListModel<>();
+        this.searchResultsList = new JList<>(searchResultsModel);
+        JScrollPane resultsScrollPane = new JScrollPane(searchResultsList);
+        this.add(resultsScrollPane, BorderLayout.SOUTH);
+
         this.connectionWindow = new ConnectionWindow(this);
 
         this.setVisible(true);
@@ -46,7 +59,7 @@ public class DownloadsWindow extends JFrame {
         JLabel searchLabel = new JLabel("Search Files");
         searchHeader.add(searchLabel, BorderLayout.WEST);
 
-        JTextField searchInput = new JTextField();
+        this.searchInput = new JTextField();  // Inicializada corretamente
         searchHeader.add(searchInput, BorderLayout.CENTER);
 
         this.searchButton = new JButton("Search");
@@ -78,15 +91,19 @@ public class DownloadsWindow extends JFrame {
 
     private void listenToCommands() {
         this.searchButton.addActionListener(new ActionListener() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("Search Button pressed");
+                String keyword = searchInput.getText(); // Lê o texto do campo de entrada correto
+                if (!keyword.isEmpty()) {
+                    System.out.println("Texto digitado: " + keyword);
+                    node.requestSearch(keyword);
+                } else {
+                    JOptionPane.showMessageDialog(DownloadsWindow.this, "Digite uma palavra-chave para pesquisa.", "Atenção", JOptionPane.WARNING_MESSAGE);
+                }
             }
         });
 
         this.downloadButton.addActionListener(new ActionListener() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 System.out.println("Download Button pressed");
@@ -94,7 +111,23 @@ public class DownloadsWindow extends JFrame {
         });
 
         this.connectButton.addActionListener(e -> showConnectionWindow());
+    }
 
+    @Override
+    public void onConnectionUpdated() {
+        connectionWindow.updateConnectionList();
+    }
+
+    @Override
+    public void onConnectionError(String errorMessage) {
+        connectionWindow.showErrorMessage(errorMessage);
+    }
+
+    public void updateSearchResults(List<FileSearchResult> results) {
+        searchResultsModel.clear();
+        for (FileSearchResult result : results) {
+            searchResultsModel.addElement(result.getName() + " - " + result.getAddress() + ":" + result.getPort());
+        }
     }
 
 }

@@ -107,4 +107,7 @@ public class ConnectionWindow extends JDialog {
         }
         return null;
     }
+
+    public void showErrorMessage(String errorMessage) {
+    }
 }
