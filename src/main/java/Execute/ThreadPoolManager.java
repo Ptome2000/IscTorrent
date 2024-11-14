@@ -1,5 +1,7 @@
 package Execute;
 
+import util.Constants;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -8,11 +10,9 @@ public class ThreadPoolManager {
 
     private final ExecutorService threadPool;
 
-    private int numThreads=5;
-
     // Construtor para inicializar o pool com o número de threads desejado
     public ThreadPoolManager() {
-        this.threadPool = Executors.newFixedThreadPool(numThreads);
+        this.threadPool = Executors.newFixedThreadPool(Constants.THREAD_NUM);
     }
 
     // Méttodo para submeter uma tarefa de download ou pesquisa

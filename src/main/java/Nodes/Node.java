@@ -24,10 +24,9 @@ public class Node {
     private final int port;
     private FolderReader directory;
     private Set<Connection> activeConnections;
-    private ObjectInputStream in;
-    private ObjectOutputStream out;
     private NodeListener listener;
 
+    // TODO EXTRA PELO STOR - Criar thread pool para limitar o numero de tarefas que se pode fazer (SÓ NO FINAL)
 
     public Node(String address, int port, String folderPath) {
         this.address = address;
@@ -44,7 +43,7 @@ public class Node {
         this.connectionListener = connectionListener;
     }
 
-    private void notifyConnectionUpdated() {
+    public void notifyConnectionUpdated() {
         if (connectionListener != null) {
             connectionListener.onConnectionUpdated();
         }
@@ -55,7 +54,6 @@ public class Node {
             connectionListener.onConnectionError(errorMessage);
         }
     }
-
 
     // Validate if a connection already exists with the address and port combo
     private boolean validateRequest(String address, int port) {
@@ -93,6 +91,7 @@ public class Node {
         }
     }
 
+    @Deprecated // Metodo Unicast de envio de mensagem
     public void sendMessageToNode(String message, String address, int port) {
         for (Connection conn : activeConnections) {
             if (conn.getAddress().equals(address) && conn.getPort() == port) {
@@ -108,8 +107,6 @@ public class Node {
             }
         }
     }
-
-
 
     public void closeConnection(Connection connection) {
         Socket socket = connection.getSocket();
@@ -127,7 +124,7 @@ public class Node {
 
     public List<FileSearchResult> searchFiles(WordSearchMessage searchedWord) {
 
-        // TODO - Create thread to deal with incoming requests
+        //TODO EXTRA - Make a method to update the file map with the downloaded files?
 
         List<FileSearchResult> results = new ArrayList<>();
         HashMap<File, String> files = directory.getHashedFiles();
@@ -140,12 +137,10 @@ public class Node {
                 System.out.println(file.getName());
             }
         }
-
         return results;
     }
 
-
-
+    // Metodo Broadcast de envio de mensagem
     public void requestSearch(String keyword) {
         WordSearchMessage searchMessage = new WordSearchMessage(keyword, this.port);
         System.out.println("Enviando mensagem de pesquisa: " + keyword);
@@ -163,14 +158,9 @@ public class Node {
         }
     }
 
-
-
     public void processSearchResults(List<FileSearchResult> results) {
-        if (connectionListener instanceof DownloadsWindow) {
-            ((DownloadsWindow) connectionListener).updateSearchResults(results);
-        }
+        ((DownloadsWindow) connectionListener).updateSearchResults(results);
     }
-
 
     public Set<Connection> getActiveConnections() {
         return activeConnections;

@@ -42,10 +42,6 @@ public class DownloadsWindow extends JFrame implements ConnectionListener {
         this.add(searchHeader, BorderLayout.NORTH);
         this.add(filesPane, BorderLayout.CENTER);
         this.add(buttonPanel, BorderLayout.EAST);
-        this.searchResultsModel = new DefaultListModel<>();
-        this.searchResultsList = new JList<>(searchResultsModel);
-        JScrollPane resultsScrollPane = new JScrollPane(searchResultsList);
-        this.add(resultsScrollPane, BorderLayout.SOUTH);
 
         this.connectionWindow = new ConnectionWindow(this);
 
@@ -67,11 +63,10 @@ public class DownloadsWindow extends JFrame implements ConnectionListener {
     }
 
     private void createList() {
-        DefaultListModel<String> listModel = new DefaultListModel<>();
-        listModel.addElement("no-copyright-music-2024_no-copyright-music-191794-um.mp3");
-        listModel.addElement("short-adventurous-intro-1-117090-um.mp3");
-        JList<String> fileList = new JList<>(listModel);
-        this.filesPane = new JScrollPane(fileList);
+        this.searchResultsModel = new DefaultListModel<>();
+        this.searchResultsList = new JList<>(searchResultsModel);
+        this.searchResultsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        this.filesPane = new JScrollPane(searchResultsList);
     }
 
     private void createButtons() {

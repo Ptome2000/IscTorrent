@@ -30,6 +30,7 @@ public class NodeListener extends Thread {
             System.err.println("Error while listening for connections: " + e.getMessage());
         }
     }
+
     private void startListening() throws IOException {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("NodeListener is listening on port " + port);
@@ -40,6 +41,8 @@ public class NodeListener extends Thread {
                 System.out.println("Conexão aceita de " + socket.getInetAddress() + ":" + socket.getPort());
 
                 // Inicia uma nova thread para processar as mensagens do cliente conectado
+                // TODO - Mudar para uma worker Thread?
+
                 new Thread(() -> handleClient(socket)).start();
             }
         }
@@ -52,6 +55,8 @@ public class NodeListener extends Thread {
             while (true) {
                 Object receivedObject = in.readObject();
                 System.out.println("Objeto recebido: " + receivedObject.getClass().getName());
+
+                //TODO Trocar por um SWITCH em vez de vários IFs
 
                 if (receivedObject instanceof WordSearchMessage searchMessage) {
                     System.out.println("WordSearchMessage recebida com palavra-chave: " + searchMessage.getKeyword());
@@ -91,9 +96,6 @@ public class NodeListener extends Thread {
         }
     }
 
-
-
-
     private void processSearchMessage(WordSearchMessage searchMessage, Socket socket) {
         // Procura arquivos locais que correspondem à pesquisa
         List<FileSearchResult> results = parentNode.searchFiles(searchMessage);
@@ -111,16 +113,16 @@ public class NodeListener extends Thread {
         }
     }
 
-
     private void handleNewConnection(NewConnectionRequest request, Socket socket) throws IOException {
         // Verifica se a conexão já está ativa para evitar duplicação
-        if (!parentNode.getActiveConnections().stream().anyMatch(
+        if (parentNode.getActiveConnections().stream().noneMatch(
                 conn -> conn.getAddress().equals(request.getAddress()) && conn.getPort() == request.getPort())) {
             System.out.println("Received connection request from " + request.getAddress() + ":" + request.getPort());
 
             // Cria a Connection com o Socket existente
             Connection conn = new Connection(request.getAddress(), request.getPort(), socket);
             synchronized (parentNode.getActiveConnections()) {
+                parentNode.notifyConnectionUpdated();
                 parentNode.getActiveConnections().add(conn);
             }
             System.out.println("Conexão adicionada: " + request.getAddress() + ":" + request.getPort());
