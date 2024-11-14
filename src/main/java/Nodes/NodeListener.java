@@ -99,12 +99,12 @@ public class NodeListener extends Thread {
         List<FileSearchResult> results = parentNode.searchFiles(searchMessage);
         System.out.println("Número de resultados encontrados: " + results.size());
 
-        // Envia os resultados de volta ao nó solicitante
+        // Envia os resultados de volta ao nó
         try {
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
             out.writeObject(results);
             out.flush();
-            System.out.println("Resultados de pesquisa enviados de volta ao solicitante.");
+            System.out.println("Resultados de pesquisa enviados de volta .");
 
         } catch (IOException e) {
             System.err.println("Erro ao enviar resultados de pesquisa: " + e.getMessage());
