@@ -57,6 +57,7 @@ public class NodeListener extends Thread {
                 System.out.println("Objeto recebido: " + receivedObject.getClass().getName());
 
                 //TODO Trocar por um SWITCH em vez de vários IFs
+                //TODO Substituir validação de classes por ENUMS?
 
                 if (receivedObject instanceof WordSearchMessage searchMessage) {
                     System.out.println("WordSearchMessage recebida com palavra-chave: " + searchMessage.getKeyword());

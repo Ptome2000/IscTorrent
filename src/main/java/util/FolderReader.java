@@ -6,28 +6,29 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.Set;
 
 public class FolderReader {
 
-    private HashMap<File, String> hashedFiles = new HashMap<>();
-    private String pathFolder;
+    private Set<TorrentFile> files;
 
     public FolderReader(String path) {
-        this.pathFolder = path;
-        File[] fileList = new File(this.pathFolder).listFiles(); // TODO Need for filter?
-
+        File[] fileList = new File(path).listFiles(); // TODO Need for filter?
+        assert fileList != null;
         for (File file : fileList) {
             try {
                String hash = calculateFileHash(file);
-               hashedFiles.put(file, hash);
+               TorrentFile tf = new TorrentFile(file, hash);
+                assert false;
+                files.add(tf);
             } catch (NoSuchAlgorithmException | IOException e) {
                 System.err.println("Error when calculating Hashes " + e.getMessage());
             }
         }
     }
 
-    public HashMap<File, String> getHashedFiles() {
-        return hashedFiles;
+    public Set<TorrentFile> getFiles() {
+        return files;
     }
 
     private static String calculateFileHash(File file) throws NoSuchAlgorithmException, IOException {

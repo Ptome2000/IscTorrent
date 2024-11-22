@@ -7,6 +7,7 @@ import Messages.NewDisconnectionRequest;
 import Messages.WordSearchMessage;
 import util.Connection;
 import util.FolderReader;
+import util.TorrentFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,7 +34,7 @@ public class Node {
         this.port = port;
         this.directory = new FolderReader(folderPath);
         this.activeConnections = new HashSet<>();
-        System.out.println(directory.getHashedFiles());
+        System.out.println(directory.getFiles());
 
         this.listener = new NodeListener(this, port);
         listener.start();
@@ -127,13 +128,13 @@ public class Node {
         //TODO EXTRA - Make a method to update the file map with the downloaded files?
 
         List<FileSearchResult> results = new ArrayList<>();
-        HashMap<File, String> files = directory.getHashedFiles();
-        for (File file : files.keySet()) {
-            if (file.getName().contains(searchedWord.getKeyword())) {
-                String fileHash = files.get(file);
+        Set<TorrentFile> files = directory.getFiles();
+        for (TorrentFile file: files) {
+            String filename = file.getName();
+            if (filename.contains(searchedWord.getKeyword())) {
                 results.add(
-                        new FileSearchResult(searchedWord, file.getName(),
-                                fileHash, file.length(), this.address, this.port));
+                        new FileSearchResult(searchedWord, filename,
+                                file.getFileHash(), file.getFile().length(), this.address, this.port));
                 System.out.println(file.getName());
             }
         }
