@@ -49,7 +49,7 @@ public class DownloadTaskManager {
 
     public void startDownload() {
         for (int i = 0; i < nodesWithFile.size(); i++) {
-            threadPool.submit(this::downloadBlock);
+            threadPool.submit(this::downloadBlock); // TODO: Transformar o método em um Runnable?
         }
     }
 
@@ -90,9 +90,10 @@ public class DownloadTaskManager {
                 FileBlockAnswerMessage blockAnswer = (FileBlockAnswerMessage) in.readObject();
                 System.out.println("Block answer received from: " + connection.getAddress() + ":" + connection.getPort());
 
-                //TODO: Validar se o bloco recebido é do ficheiro certo
-
-                return blockAnswer;
+                if (blockAnswer.getFileHash().equals(blockRequest.getFileHash())) {
+                    System.out.println("Block answer is for the correct file.");
+                    return blockAnswer;
+                }
             } catch (IOException | ClassNotFoundException e) {
                 System.err.println("Error requesting block: " + e.getMessage());
             }
@@ -103,10 +104,12 @@ public class DownloadTaskManager {
     public void uploadBlock(FileBlockAnswerMessage block) {
         lock.lock();
         try {
-
-            //TODO: Validar se o bloco não está repetido ou como inserir na lista? alguma lógica para estar bem ordenado?
-
-            downloadedBlocks.add(block);
+            if (!downloadedBlocks.contains(block)) {
+                downloadedBlocks.add(block);
+                System.out.println("Block with Offset: " + block.getOffset() + " added to downloaded blocks");
+            } else {
+                System.out.println("Duplicate block received, ignoring block");
+            }
         } finally {
             lock.unlock();
         }

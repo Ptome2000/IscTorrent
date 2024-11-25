@@ -40,7 +40,7 @@ public class TorrentFile {
 
         while (offset < fileSize) {
             int length = (int) Math.min(blockSize, fileSize - offset);
-            blocks.add(new FileBlockAnswerMessage(new byte[length], offset, length));
+            blocks.add(new FileBlockAnswerMessage(new byte[length], offset, length, fileHash));
             offset += length;
         }
         return blocks;
