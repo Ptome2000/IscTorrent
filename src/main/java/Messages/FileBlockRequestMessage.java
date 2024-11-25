@@ -7,10 +7,10 @@ public class FileBlockRequestMessage {
     private final int blockSize = Constants.BLOCK_SIZE;
 
     private final String fileHash;
-    private final int offset;
+    private final long offset;
     private final int length;
 
-    public FileBlockRequestMessage(String fileHash, int offset, int length) {
+    public FileBlockRequestMessage(String fileHash, long offset, int length) {
         this.fileHash = fileHash;
         this.offset = offset;
         this.length = length;
@@ -20,7 +20,7 @@ public class FileBlockRequestMessage {
         return fileHash;
     }
 
-    public int getOffset() {
+    public long getOffset() {
         return offset;
     }
 
