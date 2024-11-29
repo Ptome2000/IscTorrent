@@ -61,29 +61,31 @@ public class NodeListener extends Thread {
                 //TODO Trocar por um SWITCH em vez de vários IFs
                 //TODO Substituir validação de classes por ENUMS?
 
-                if (receivedObject instanceof WordSearchMessage searchMessage) {
-                    System.out.println("WordSearchMessage recebida com palavra-chave: " + searchMessage.getKeyword());
-                    processSearchMessage(searchMessage, socket);
-
-                } else if (receivedObject instanceof NewConnectionRequest request) {
-                    System.out.println("NewConnectionRequest recebida de: " + request.getAddress() + ":" + request.getPort());
-                    handleNewConnection(request, socket);
-
-                } else if (receivedObject instanceof NewDisconnectionRequest request) {
-                    System.out.println("NewDisconnectionRequest recebida de: " + request.getAddress() + ":" + request.getPort());
-                    handleDisconnection(request, socket);
-
-                } else if (receivedObject instanceof List<?>) {
-                    try {
-                        @SuppressWarnings("unchecked")
-                        List<FileSearchResult> results = (List<FileSearchResult>) receivedObject;
-                        System.out.println("Lista de FileSearchResult recebida com " + results.size() + " resultados.");
-                        parentNode.processSearchResults(results);
-                    } catch (ClassCastException e) {
-                        System.err.println("Erro ao processar os resultados da pesquisa: " + e.getMessage());
+                switch (receivedObject) {
+                    case WordSearchMessage searchMessage -> {
+                        System.out.println("WordSearchMessage recebida com palavra-chave: " + searchMessage.getKeyword());
+                        processSearchMessage(searchMessage, socket);
                     }
-                } else {
-                    System.out.println("Tipo de objeto inesperado recebido: " + receivedObject.getClass().getName());
+                    case NewConnectionRequest request -> {
+                        System.out.println("NewConnectionRequest recebida de: " + request.getAddress() + ":" + request.getPort());
+                        handleNewConnection(request, socket);
+                    }
+                    case NewDisconnectionRequest request -> {
+                        System.out.println("NewDisconnectionRequest recebida de: " + request.getAddress() + ":" + request.getPort());
+                        handleDisconnection(request, socket);
+                    }
+                    case List<?> objects -> {
+                        try {
+                            @SuppressWarnings("unchecked")
+                            List<FileSearchResult> results = (List<FileSearchResult>) receivedObject;
+                            System.out.println("Lista de FileSearchResult recebida com " + results.size() + " resultados.");
+                            parentNode.processSearchResults(results);
+                        } catch (ClassCastException e) {
+                            System.err.println("Erro ao processar os resultados da pesquisa: " + e.getMessage());
+                        }
+                    }
+                    default ->
+                            System.out.println("Tipo de objeto inesperado recebido: " + receivedObject.getClass().getName());
                 }
             }
         } catch (ClassNotFoundException e) {
