@@ -1,8 +1,9 @@
 package Messages;
 
 import util.Constants;
+import java.io.Serializable;
 
-public class FileBlockRequestMessage {
+public class FileBlockRequestMessage implements Serializable {
 
     private final int blockSize = Constants.BLOCK_SIZE;
 

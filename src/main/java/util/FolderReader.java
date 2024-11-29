@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
 
 public class FolderReader {
@@ -15,12 +16,12 @@ public class FolderReader {
     public FolderReader(String path) {
         File[] fileList = new File(path).listFiles(); // TODO Need for filter?
         assert fileList != null;
+        this.files = new HashSet<>();
         for (File file : fileList) {
             try {
                String hash = calculateFileHash(file);
                TorrentFile tf = new TorrentFile(file, hash);
-                assert false;
-                files.add(tf);
+               files.add(tf);
             } catch (NoSuchAlgorithmException | IOException e) {
                 System.err.println("Error when calculating Hashes " + e.getMessage());
             }

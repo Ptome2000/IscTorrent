@@ -1,6 +1,8 @@
 package Messages;
 
-public class FileBlockAnswerMessage {
+import java.io.Serializable;
+
+public class FileBlockAnswerMessage implements Serializable {
 
     private final byte[] data;
     private final long offset;

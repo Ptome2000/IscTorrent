@@ -56,7 +56,6 @@ public class NodeListener extends Thread {
 
             while (true) {
                 Object receivedObject = in.readObject();
-                System.out.println("Objeto recebido: " + receivedObject.getClass().getName());
 
                 //TODO Trocar por um SWITCH em vez de vários IFs
                 //TODO Substituir validação de classes por ENUMS?
@@ -69,10 +68,6 @@ public class NodeListener extends Thread {
                     case NewConnectionRequest request -> {
                         System.out.println("NewConnectionRequest recebida de: " + request.getAddress() + ":" + request.getPort());
                         handleNewConnection(request, socket);
-                    }
-                    case NewDisconnectionRequest request -> {
-                        System.out.println("NewDisconnectionRequest recebida de: " + request.getAddress() + ":" + request.getPort());
-                        handleDisconnection(request, socket);
                     }
                     case List<?> objects -> {
                         try {
@@ -122,27 +117,18 @@ public class NodeListener extends Thread {
         // Verifica se a conexão já está ativa para evitar duplicação
         if (parentNode.getActiveConnections().stream().noneMatch(
                 conn -> conn.getAddress().equals(request.getAddress()) && conn.getPort() == request.getPort())) {
-            System.out.println("Received connection request from " + request.getAddress() + ":" + request.getPort());
 
             // Cria a Connection com o Socket existente
-            Connection conn = new Connection(request.getAddress(), request.getPort(), socket);
+            Connection conn = new Connection(request.getAddress(), request.getPort(), socket, this.parentNode);
             synchronized (parentNode.getActiveConnections()) {
                 parentNode.notifyConnectionUpdated();
                 parentNode.getActiveConnections().add(conn);
             }
+            conn.start();
             System.out.println("Conexão adicionada: " + request.getAddress() + ":" + request.getPort());
         } else {
             System.out.println("Conexão com " + request.getAddress() + ":" + request.getPort() + " já está ativa.");
         }
     }
 
-    private void handleDisconnection(NewDisconnectionRequest request, Socket socket) throws IOException {
-        System.out.println("Received disconnection request from " + request.getAddress() + ":" + request.getPort());
-        synchronized (parentNode.getActiveConnections()) {
-            parentNode.getActiveConnections().removeIf(
-                    conn -> conn.getAddress().equals(request.getAddress()) && conn.getPort() == request.getPort()
-            );
-        }
-        socket.close();
-    }
 }

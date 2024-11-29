@@ -71,15 +71,10 @@ public class Node {
         if (!(this.address.equals(address) && port == this.port) && validateRequest(address, port)) {
             NewConnectionRequest request = new NewConnectionRequest(this.address, this.port); // Informações do nó remetente
             try {
-                // Cria a conexão e armazena o Socket e o ObjectOutputStream na classe Connection
-                Connection conn = new Connection(address, port);
+                Connection conn = new Connection(address, port, this);
+                conn.establishConnection(request);
                 activeConnections.add(conn);
-
-                // Envia a solicitação de nova conexão usando o ObjectOutputStream da Connection
-                ObjectOutputStream out = conn.getOutputStream();
-                out.writeObject(request);
-                out.flush(); // Garante que a mensagem seja enviada imediatamente
-
+                conn.start();
                 notifyConnectionUpdated();
                 System.out.println("Conexão estabelecida e adicionada: " + address + ":" + port);
             } catch (IOException e) {
@@ -110,17 +105,16 @@ public class Node {
     }
 
     public void closeConnection(Connection connection) {
-        Socket socket = connection.getSocket();
         NewDisconnectionRequest request = new NewDisconnectionRequest(this.address, this.port);
-        try {
-            // TODO: With Bugs, fix later
-            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-            out.writeObject(request);
-            activeConnections.remove(connection);
-            socket.close();
-        } catch (IOException e) {
-            System.err.println("Problem while closing connection: " + e.getMessage());
-        }
+        // TODO: With Bugs, fix later
+        connection.close(request);
+        activeConnections.remove(connection);
+        connectionListener.onConnectionUpdated();
+    }
+
+    public void removeConnection(Connection connection) {
+        activeConnections.remove(connection);
+        connectionListener.onConnectionUpdated();
     }
 
     public List<FileSearchResult> searchFiles(WordSearchMessage searchedWord) {

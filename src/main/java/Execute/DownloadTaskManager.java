@@ -27,12 +27,16 @@ public class DownloadTaskManager {
     private final ExecutorService threadPool;
     private final Lock lock;
     private final Condition notEmpty;
+    private final Node parentNode;
 
-    public DownloadTaskManager(FileSearchResult file, List<Node> nodesWithFile) {
+    public DownloadTaskManager(FileSearchResult file, List<Node> nodesWithFile, Node parentNode) {
         this.blocksToDownload = createBlockRequests(file);
+        this.downloadedBlocks = new ArrayList<>();
         this.lock = new ReentrantLock();
         this.notEmpty = lock.newCondition();
         this.threadPool = Executors.newFixedThreadPool(nodesWithFile.size());
+        this.parentNode = parentNode;
+        startDownload();
     }
 
     private List<FileBlockRequestMessage> createBlockRequests(FileSearchResult file) {
@@ -81,15 +85,8 @@ public class DownloadTaskManager {
     private FileBlockAnswerMessage requestBlockFromNode(FileBlockRequestMessage blockRequest) {
         for (Connection connection : nodesWithFile) {
             try {
-                ObjectOutputStream out = connection.getOutputStream();
-                out.writeObject(blockRequest);
-                out.flush();
-                System.out.println("Block request sent to: " + connection.getAddress() + ":" + connection.getPort());
-
-                ObjectInputStream in = new ObjectInputStream(connection.getInputStream());
-                FileBlockAnswerMessage blockAnswer = (FileBlockAnswerMessage) in.readObject();
-                System.out.println("Block answer received from: " + connection.getAddress() + ":" + connection.getPort());
-
+                FileBlockAnswerMessage blockAnswer = connection.requestBlock(blockRequest);
+                System.out.println("Block received from node: " + connection);
                 if (blockAnswer.getFileHash().equals(blockRequest.getFileHash())) {
                     System.out.println("Block answer is for the correct file.");
                     return blockAnswer;

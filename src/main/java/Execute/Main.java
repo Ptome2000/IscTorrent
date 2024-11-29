@@ -9,7 +9,6 @@ import java.util.Set;
 
 public class Main {
     public static void main(String[] args) {
-
         //FolderReader files = new FolderReader("files");
         Node n1 = new Node("localhost", 8081, "files/N1");
         DownloadsWindow downloadsWindow = new DownloadsWindow(n1);
@@ -21,4 +20,11 @@ public class Main {
         n2.searchFiles(w);
 
     }
+
+
+    private void testingDownload() {
+        Node n1 = new Node("localhost", 8081, "files/N1");
+
+    }
+
 }
