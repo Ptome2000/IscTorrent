@@ -49,7 +49,9 @@ public class NodeListener extends Thread {
     }
 
     private void handleClient(Socket socket) {
-        try (ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
+        try ( ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+              ObjectInputStream in = new ObjectInputStream(socket.getInputStream()))
+        {
             System.out.println("ObjectInputStream criado. Aguardando mensagens...");
 
             while (true) {
