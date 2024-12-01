@@ -71,6 +71,29 @@ public class Node {
         if (!(this.address.equals(address) && port == this.port) && validateRequest(address, port)) {
             NewConnectionRequest request = new NewConnectionRequest(this.address, this.port); // Informações do nó remetente
             try {
+                Connection conn = new Connection(address, port);
+                conn.establishConnection(request);
+                activeConnections.add(conn);
+                conn.start();
+                notifyConnectionUpdated();
+                System.out.println("Conexão estabelecida e adicionada: " + address + ":" + port);
+            } catch (IOException e) {
+                notifyConnectionError("Erro ao estabelecer conexão: " + e.getMessage());
+                System.err.println("Problema ao estabelecer conexão: " + e.getMessage());
+            }
+        } else {
+            notifyConnectionError("Conexão com " + address + ":" + port + " já existe ou é inválida.");
+            System.out.println("Não foi possível estabelecer conexão com " + address + ":" + port);
+        }
+    }
+
+
+
+/*
+    public void connectToNode(String address, int port) {
+        if (!(this.address.equals(address) && port == this.port) && validateRequest(address, port)) {
+            NewConnectionRequest request = new NewConnectionRequest(this.address, this.port); // Informações do nó remetente
+            try {
                 Connection conn = new Connection(address, port, this);
                 conn.establishConnection(request);
                 activeConnections.add(conn);
@@ -86,6 +109,8 @@ public class Node {
             System.out.println("Não foi possível estabelecer conexão com " + address + ":" + port);
         }
     }
+
+ */
 
     @Deprecated // Metodo Unicast de envio de mensagem
     public void sendMessageToNode(String message, String address, int port) {
@@ -118,20 +143,22 @@ public class Node {
     }
 
     public List<FileSearchResult> searchFiles(WordSearchMessage searchedWord) {
-
         //TODO EXTRA - Make a method to update the file map with the downloaded files?
 
         List<FileSearchResult> results = new ArrayList<>();
         Set<TorrentFile> files = directory.getFiles();
-        for (TorrentFile file: files) {
-            String filename = file.getName();
-            if (filename.contains(searchedWord.getKeyword())) {
-                results.add(
-                        new FileSearchResult(searchedWord, filename,
-                                file.getFileHash(), file.getFile().length(), this.address, this.port));
-                System.out.println(file.getName());
+        if (files != null){
+            for (TorrentFile file: files) {
+                String filename = file.getName();
+                if (filename.contains(searchedWord.getKeyword())) {
+                    results.add(
+                            new FileSearchResult(searchedWord, filename,
+                                    file.getFileHash(), file.getFile().length(), this.address, this.port));
+                    System.out.println(file.getName());
+                }
             }
         }
+
         return results;
     }
 
@@ -142,7 +169,7 @@ public class Node {
 
         for (Connection connection : activeConnections) {
             try {
-                ObjectOutputStream out = connection.getOutputStream(); // Usa o ObjectOutputStream persistente
+                ObjectOutputStream out = connection.getOutputStream();
                 out.writeObject(searchMessage);
                 out.flush();
                 System.out.println("Mensagem de pesquisa enviada para: " + connection.getAddress() + ":" + connection.getPort());
@@ -161,4 +188,9 @@ public class Node {
         return activeConnections;
     }
 
+
+
+    public synchronized void addActiveConnections(Connection connection) {
+        activeConnections.add(connection);
+    }
 }

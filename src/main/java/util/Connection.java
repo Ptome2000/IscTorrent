@@ -3,117 +3,108 @@ package util;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.Socket;
+import java.util.List;
 
-import Messages.FileBlockAnswerMessage;
-import Messages.FileBlockRequestMessage;
 import Messages.NewConnectionRequest;
 import Messages.NewDisconnectionRequest;
-import Nodes.Node;
-import java.io.Serializable;
+import Messages.WordSearchMessage;
+import Nodes.FileSearchResult;
+
+import static java.lang.System.out;
 
 public class Connection extends Thread {
 
-    private final String address;
-    private final int port;
-    private final Socket socket;
-    private final ObjectOutputStream out;
-    private final ObjectInputStream in;
-    private final Node parentNode;
+        private final String address;
+        private final int port;
+        private final Socket socket;
+        private final ObjectOutputStream out;
+        private final ObjectInputStream in;
 
-    public Connection(String address, int port, Node parentNode) throws IOException {
-        this.address = address;
-        this.port = port;
-        this.socket = new Socket(address, port); // Conecta uma vez ao servidor
-        this.out = new ObjectOutputStream(socket.getOutputStream()); // Cria uma vez o ObjectOutputStream
-        this.in = new ObjectInputStream(socket.getInputStream()); // Cria uma vez o ObjectInputStream
-        this.parentNode = parentNode;
-    }
+        public Connection(String address, int port) throws IOException {
+            this.address = address;
+            this.port = port;
+            this.socket = new Socket(address, port); // Conecta uma vez ao servidor
+            this.out = new ObjectOutputStream(socket.getOutputStream()); // Cria uma vez o ObjectOutputStream
+            this.in = new ObjectInputStream(socket.getInputStream()); // Cria uma vez o ObjectInputStream
+        }
 
-    public Connection(String address, int port, Socket socket, Node parentNode) throws IOException {
+    public Connection(String address, int port, Socket socket) throws IOException {
         this.address = address;
         this.port = port;
         this.socket = socket;
-        this.out = new ObjectOutputStream(socket.getOutputStream()); // Cria o ObjectOutputStream uma vez
-        this.in = new ObjectInputStream(socket.getInputStream()); // Cria o ObjectInputStream
-        this.parentNode = parentNode;
+        this.out = new ObjectOutputStream(socket.getOutputStream()); // Cria uma vez o ObjectOutputStream
+        this.in = new ObjectInputStream(socket.getInputStream()); // Cria uma vez o ObjectInputStream
     }
 
-    @Override
-    public void run() {
-        try {
-            while (true) {
-                Object receivedMessage = in.readObject();
-                System.out.println("Mensagem recebida do tipo: " + receivedMessage.getClass().getName());
-                if (receivedMessage instanceof NewDisconnectionRequest message) {
-                    System.out.println("NewDisconnectionRequest recebida de: " + message.getAddress() + ":" + message.getPort());
-                    handleDisconnection(message);
-                }
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println("Erro ao receber mensagem: " + e.getMessage());
+
+        public String getAddress() {
+            return address;
         }
-    }
 
-    public void sendMessage(Serializable message) {
-        try {
-            out.writeObject(message);
-            out.flush();
-        } catch (IOException e) {
-            System.err.println("Erro ao enviar mensagem: " + e.getMessage());
+
+        public int getPort() {
+            return port;
         }
-    }
 
-    public String getAddress() {
-        return address;
-    }
+        public Socket getSocket() {
+            return socket;
+        }
 
-    public int getPort() {
-        return port;
-    }
 
-    public ObjectOutputStream getOutputStream() { return out; }
+        public ObjectOutputStream getOutputStream() {
+            return out;
+        }
 
-    public ObjectInputStream getInputStream() { return in; }
+        public ObjectInputStream getInputStream() {
+            return in;
+        }
 
-    public void establishConnection(NewConnectionRequest request) throws IOException {
-        out.writeObject(request);
-        out.flush();
-    }
 
-    public FileBlockAnswerMessage requestBlock(FileBlockRequestMessage blockRequest) throws IOException, ClassNotFoundException {
-        out.writeObject(blockRequest);
-        out.flush();
-        while(true) {
-            Object receivedMessage = in.readObject();
-            if (receivedMessage instanceof FileBlockAnswerMessage message) {
-                return message;
+
+        // Método para fechar a conexão quando não for mais necessária
+        public void close(NewDisconnectionRequest request) {
+            try {
+                out.close();
+                socket.close();
+                System.err.println("Conexão fechada com " + address + ":" + port);
+            } catch (IOException e) {
+                System.err.println("Erro ao fechar a conexão: " + e.getMessage());
             }
         }
-    }
 
-    public void close(NewDisconnectionRequest request) {
+        public boolean equals(String address, int port) {
+            return (address.equals(this.address) && port == this.port);
+        }
+
+        @Override
+        public String toString() {
+            return address + ":" + port;
+        }
+
+    public void establishConnection(NewConnectionRequest request) {
         try {
             out.writeObject(request);
             out.flush();
-            this.interrupt();
         } catch (IOException e) {
-            System.err.println("Erro ao fechar conexão: " + e.getMessage());
+            System.err.println("Erro ao estabelecer conexão: " + e.getMessage());
         }
     }
 
-    private void handleDisconnection(NewDisconnectionRequest request) throws IOException {
-        this.parentNode.removeConnection(this);
-        socket.close();
-        this.interrupt();
+    public void sendMessage(Serializable message) throws IOException {
+        synchronized (out) {
+            out.writeObject(message);
+            out.flush();
+        }
     }
 
-    public boolean equals(String address, int port) {
-        return (address.equals(this.address) && port == this.port);
+    public Object receiveMessage() throws IOException, ClassNotFoundException {
+        return in.readObject();
     }
 
-    @Override
-    public String toString() {
-        return address + ":" + port;
-    }
+
 }
+
+
+
