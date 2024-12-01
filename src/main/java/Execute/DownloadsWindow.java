@@ -131,7 +131,7 @@ public class DownloadsWindow extends JFrame implements ConnectionListener {
 
  */
 
-    public void updateSearchResults(Map<String, List<NodeInfo>> consolidatedResults) {
+    public synchronized void updateSearchResults(Map<String, List<NodeInfo>> consolidatedResults) {
         searchResultsModel.clear(); // Limpa os resultados anteriores
 
         for (Map.Entry<String, List<NodeInfo>> entry : consolidatedResults.entrySet()) {

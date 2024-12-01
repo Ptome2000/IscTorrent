@@ -186,7 +186,7 @@ public class Node {
         ((DownloadsWindow) connectionListener).updateSearchResults(results);
     }
 */
-public void processSearchResults(List<FileSearchResult> results) {
+public synchronized void processSearchResults(List<FileSearchResult> results) {
     for (FileSearchResult result : results) {
         String fileName = result.getName();
         NodeInfo nodeInfo = new NodeInfo(result.getAddress(), result.getPort());
