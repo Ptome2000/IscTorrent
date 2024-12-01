@@ -2,12 +2,14 @@ package Execute;
 
 import Nodes.FileSearchResult;
 import Nodes.Node;
+import Nodes.NodeInfo;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
+import java.util.Map;
 
 public class DownloadsWindow extends JFrame implements ConnectionListener {
 
@@ -90,6 +92,7 @@ public class DownloadsWindow extends JFrame implements ConnectionListener {
             public void actionPerformed(ActionEvent e) {
                 String keyword = searchInput.getText(); // Lê o texto do campo de entrada correto
                 if (!keyword.isEmpty()) {
+                    node.clearConsolidatedResults();
                     System.out.println("Texto digitado: " + keyword);
                     node.requestSearch(keyword);
                 } else {
@@ -117,12 +120,40 @@ public class DownloadsWindow extends JFrame implements ConnectionListener {
     public void onConnectionError(String errorMessage) {
         connectionWindow.showErrorMessage(errorMessage);
     }
-
+/*
     public void updateSearchResults(List<FileSearchResult> results) {
         searchResultsModel.clear();
+
         for (FileSearchResult result : results) {
             searchResultsModel.addElement(result.getName() + " - " + result.getAddress() + ":" + result.getPort());
         }
     }
+
+ */
+
+    public void updateSearchResults(Map<String, List<NodeInfo>> consolidatedResults) {
+        searchResultsModel.clear(); // Limpa os resultados anteriores
+
+        for (Map.Entry<String, List<NodeInfo>> entry : consolidatedResults.entrySet()) {
+            String fileName = entry.getKey();
+            List<NodeInfo> nodes = entry.getValue();
+
+            // Cria a string para exibição
+            StringBuilder displayString = new StringBuilder(fileName + " - ");
+            for (NodeInfo node : nodes) {
+                displayString.append(node.toString()).append(", ");
+            }
+
+            // Remove a vírgula extra no final
+            if (displayString.length() > 2) {
+                displayString.setLength(displayString.length() - 2);
+            }
+
+            // Adiciona o resultado à interface gráfica
+            searchResultsModel.addElement(displayString.toString());
+        }
+    }
+
+
 
 }

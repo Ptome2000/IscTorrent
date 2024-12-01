@@ -26,6 +26,8 @@ public class Node {
     private FolderReader directory;
     private Set<Connection> activeConnections;
     private NodeListener listener;
+    private final Map<String, List<NodeInfo>> consolidatedResults = new HashMap<>();
+
 
     // TODO EXTRA PELO STOR - Criar thread pool para limitar o numero de tarefas que se pode fazer (SÓ NO FINAL)
 
@@ -179,10 +181,33 @@ public class Node {
             }
         }
     }
-
+/*
     public void processSearchResults(List<FileSearchResult> results) {
         ((DownloadsWindow) connectionListener).updateSearchResults(results);
     }
+*/
+public void processSearchResults(List<FileSearchResult> results) {
+    for (FileSearchResult result : results) {
+        String fileName = result.getName();
+        NodeInfo nodeInfo = new NodeInfo(result.getAddress(), result.getPort());
+
+        // Adiciona o NodeInfo ao ficheiro correspondente no mapa
+        consolidatedResults
+                .computeIfAbsent(fileName, k -> new ArrayList<>())
+                .add(nodeInfo);
+    }
+
+    // Atualiza a interface gráfica com os resultados consolidados
+    ((DownloadsWindow) connectionListener).updateSearchResults(new HashMap<>(consolidatedResults));
+}
+
+    public void clearConsolidatedResults() {
+        consolidatedResults.clear();
+        System.out.println("Mapa consolidado de resultados limpo.");
+    }
+
+
+
 
     public Set<Connection> getActiveConnections() {
         return activeConnections;
