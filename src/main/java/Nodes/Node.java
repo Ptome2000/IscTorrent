@@ -26,7 +26,7 @@ public class Node {
     private FolderReader directory;
     private Set<Connection> activeConnections;
     private NodeListener listener;
-    private final Map<String, List<NodeInfo>> consolidatedResults = new HashMap<>();
+    private Map<FileSearchResult, List<Connection>> consolidatedResults = new HashMap<>();
 
 
     // TODO EXTRA PELO STOR - Criar thread pool para limitar o numero de tarefas que se pode fazer (SÓ NO FINAL)
@@ -73,7 +73,7 @@ public class Node {
         if (!(this.address.equals(address) && port == this.port) && validateRequest(address, port)) {
             NewConnectionRequest request = new NewConnectionRequest(this.address, this.port); // Informações do nó remetente
             try {
-                Connection conn = new Connection(address, port);
+                Connection conn = new Connection(address, port, this);
                 conn.establishConnection(request);
                 activeConnections.add(conn);
                 conn.start();
@@ -134,9 +134,8 @@ public class Node {
     public void closeConnection(Connection connection) {
         NewDisconnectionRequest request = new NewDisconnectionRequest(this.address, this.port);
         // TODO: With Bugs, fix later
-        connection.close(request);
-        activeConnections.remove(connection);
-        connectionListener.onConnectionUpdated();
+        connection.disconnect(request);
+        removeConnection(connection);
     }
 
     public void removeConnection(Connection connection) {
@@ -186,34 +185,40 @@ public class Node {
         ((DownloadsWindow) connectionListener).updateSearchResults(results);
     }
 */
-public synchronized void processSearchResults(List<FileSearchResult> results) {
-    for (FileSearchResult result : results) {
-        String fileName = result.getName();
-        NodeInfo nodeInfo = new NodeInfo(result.getAddress(), result.getPort());
+    public synchronized void processSearchResults(List<FileSearchResult> results) {
+        for (FileSearchResult result : results) {
+            // Adiciona o NodeInfo ao ficheiro correspondente no mapa
+            Connection connection = findConnection(result);
+            consolidatedResults
+                    .computeIfAbsent(result, k -> new ArrayList<>())
+                    .add(connection);
+        }
 
-        // Adiciona o NodeInfo ao ficheiro correspondente no mapa
-        consolidatedResults
-                .computeIfAbsent(fileName, k -> new ArrayList<>())
-                .add(nodeInfo);
+        // Atualiza a interface gráfica com os resultados consolidados
+        ((DownloadsWindow) connectionListener).updateSearchResults(new HashMap<>(consolidatedResults));
     }
 
-    // Atualiza a interface gráfica com os resultados consolidados
-    ((DownloadsWindow) connectionListener).updateSearchResults(new HashMap<>(consolidatedResults));
-}
+    private Connection findConnection(FileSearchResult result) {
+        for (Connection connection : activeConnections) {
+            if (connection.getAddress().equals(result.getAddress()) && connection.getPort() == result.getPort()) {
+                return connection;
+            }
+        }
+        return null;
+    }
 
     public void clearConsolidatedResults() {
         consolidatedResults.clear();
         System.out.println("Mapa consolidado de resultados limpo.");
     }
 
-
-
-
     public Set<Connection> getActiveConnections() {
         return activeConnections;
     }
 
-
+    public Map<FileSearchResult, List<Connection>> getConsolidatedResults() {
+        return consolidatedResults;
+    }
 
     public synchronized void addActiveConnections(Connection connection) {
         activeConnections.add(connection);

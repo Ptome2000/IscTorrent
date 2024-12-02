@@ -8,8 +8,6 @@ import util.Connection;
 import util.Constants;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,19 +19,17 @@ import java.util.concurrent.locks.ReentrantLock;
 // Shared resource for Threads
 public class DownloadTaskManager {
 
-    public List<FileBlockRequestMessage> blocksToDownload;
-    public List<FileBlockAnswerMessage> downloadedBlocks;
-    public List<Connection> nodesWithFile;
+    private List<FileBlockRequestMessage> blocksToDownload;
+    private List<FileBlockAnswerMessage> downloadedBlocks = new ArrayList<>();
+    private List<Connection> nodesWithFile;
     private final ExecutorService threadPool;
-    private final Lock lock;
-    private final Condition notEmpty;
+    private final Lock lock = new ReentrantLock();
+    private final Condition notEmpty = lock.newCondition();
     private final Node parentNode;
 
-    public DownloadTaskManager(FileSearchResult file, List<Node> nodesWithFile, Node parentNode) {
+    public DownloadTaskManager(FileSearchResult file, List<Connection> nodesWithFile, Node parentNode) {
         this.blocksToDownload = createBlockRequests(file);
-        this.downloadedBlocks = new ArrayList<>();
-        this.lock = new ReentrantLock();
-        this.notEmpty = lock.newCondition();
+        this.nodesWithFile = nodesWithFile;
         this.threadPool = Executors.newFixedThreadPool(nodesWithFile.size());
         this.parentNode = parentNode;
         startDownload();
@@ -64,6 +60,7 @@ public class DownloadTaskManager {
                 if (blockRequest == null) {
                     break;
                 }
+                System.out.println("Requesting block with offset: " + blockRequest.getOffset());
                 FileBlockAnswerMessage blockAnswer = requestBlockFromNode(blockRequest);
                 uploadBlock(blockAnswer);
             }

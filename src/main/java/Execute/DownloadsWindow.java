@@ -3,11 +3,13 @@ package Execute;
 import Nodes.FileSearchResult;
 import Nodes.Node;
 import Nodes.NodeInfo;
+import util.Connection;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -104,11 +106,28 @@ public class DownloadsWindow extends JFrame implements ConnectionListener {
         this.downloadButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("Download Button pressed");
+                int selectedIndex = searchResultsList.getSelectedIndex();
+                if (selectedIndex != -1) {
+                    String selectedValue = searchResultsModel.getElementAt(selectedIndex);
+                    FileSearchResult fileToDownload = findFileFromString(selectedValue);
+                    if (fileToDownload != null) {
+                        List<Connection> nodesWithFile = node.getConsolidatedResults().get(fileToDownload);
+                        DownloadTaskManager downloadTaskManager = new DownloadTaskManager(fileToDownload, nodesWithFile, node);
+                    }
+                }
             }
         });
 
         this.connectButton.addActionListener(e -> showConnectionWindow());
+    }
+
+    private FileSearchResult findFileFromString(String connectionString) {
+        for (FileSearchResult file : node.getConsolidatedResults().keySet()) {
+            if (connectionString.contains(file.getName())) {
+                return file;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -131,16 +150,16 @@ public class DownloadsWindow extends JFrame implements ConnectionListener {
 
  */
 
-    public synchronized void updateSearchResults(Map<String, List<NodeInfo>> consolidatedResults) {
+    public synchronized void updateSearchResults(Map<FileSearchResult, List<Connection>> consolidatedResults) {
         searchResultsModel.clear(); // Limpa os resultados anteriores
 
-        for (Map.Entry<String, List<NodeInfo>> entry : consolidatedResults.entrySet()) {
-            String fileName = entry.getKey();
-            List<NodeInfo> nodes = entry.getValue();
+        for (Map.Entry<FileSearchResult, List<Connection>> entry : consolidatedResults.entrySet()) {
+            String fileName = entry.getKey().getName();
+            List<Connection> nodes = entry.getValue();
 
             // Cria a string para exibição
             StringBuilder displayString = new StringBuilder(fileName + " - ");
-            for (NodeInfo node : nodes) {
+            for (Connection node : nodes) {
                 displayString.append(node.toString()).append(", ");
             }
 

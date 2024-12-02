@@ -139,7 +139,7 @@ public class NodeListener extends Thread {
                 System.out.println("Nova conexão recebida dexxxxxx: " + request.getAddress() + ":" + request.getPort());
                 // Cria uma nova Connection com o socket recebido
                 try {
-                    Connection conn = new Connection(request.getAddress(), request.getPort());
+                    Connection conn = new Connection(request.getAddress(), request.getPort(), this.parentNode);
                     if (!conn.isAlive()) {
                         conn.start();
                     }
