@@ -2,14 +2,12 @@ package Execute;
 
 import Nodes.FileSearchResult;
 import Nodes.Node;
-import Nodes.NodeInfo;
 import util.Connection;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -113,6 +111,7 @@ public class DownloadsWindow extends JFrame implements ConnectionListener {
                     if (fileToDownload != null) {
                         List<Connection> nodesWithFile = node.getConsolidatedResults().get(fileToDownload);
                         DownloadTaskManager downloadTaskManager = new DownloadTaskManager(fileToDownload, nodesWithFile, node);
+                        node.startDownload(downloadTaskManager);
                     }
                 }
             }

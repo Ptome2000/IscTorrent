@@ -26,13 +26,19 @@ public class DownloadTaskManager {
     private final Lock lock = new ReentrantLock();
     private final Condition notEmpty = lock.newCondition();
     private final Node parentNode;
+    private final String fileHash;
 
     public DownloadTaskManager(FileSearchResult file, List<Connection> nodesWithFile, Node parentNode) {
+        this.parentNode = parentNode;
         this.blocksToDownload = createBlockRequests(file);
+        this.fileHash = file.getHash();
         this.nodesWithFile = nodesWithFile;
         this.threadPool = Executors.newFixedThreadPool(nodesWithFile.size());
-        this.parentNode = parentNode;
         startDownload();
+    }
+
+    public String getFileHash() {
+        return fileHash;
     }
 
     private List<FileBlockRequestMessage> createBlockRequests(FileSearchResult file) {
@@ -42,7 +48,7 @@ public class DownloadTaskManager {
 
         for (long offset = 0; offset < fileSize; offset += Constants.BLOCK_SIZE) {
             int length = (int) Math.min(Constants.BLOCK_SIZE, fileSize - offset);
-            blockRequests.add(new FileBlockRequestMessage(fileHash, offset, length));
+            blockRequests.add(new FileBlockRequestMessage(fileHash, offset, length, parentNode.getPort()));
         }
         return blockRequests;
     }
@@ -60,9 +66,7 @@ public class DownloadTaskManager {
                 if (blockRequest == null) {
                     break;
                 }
-                System.out.println("Requesting block with offset: " + blockRequest.getOffset());
-                FileBlockAnswerMessage blockAnswer = requestBlockFromNode(blockRequest);
-                uploadBlock(blockAnswer);
+                requestBlockFromNode(blockRequest);
             }
         } catch (InterruptedException e) {
             System.out.println("Download task interrupted");
@@ -79,20 +83,14 @@ public class DownloadTaskManager {
         }
     }
 
-    private FileBlockAnswerMessage requestBlockFromNode(FileBlockRequestMessage blockRequest) {
+    private void requestBlockFromNode(FileBlockRequestMessage blockRequest) {
         for (Connection connection : nodesWithFile) {
             try {
-                FileBlockAnswerMessage blockAnswer = connection.requestBlock(blockRequest);
-                System.out.println("Block received from node: " + connection);
-                if (blockAnswer.getFileHash().equals(blockRequest.getFileHash())) {
-                    System.out.println("Block answer is for the correct file.");
-                    return blockAnswer;
-                }
+                connection.requestBlock(blockRequest);
             } catch (IOException | ClassNotFoundException e) {
                 System.err.println("Error requesting block: " + e.getMessage());
             }
         }
-        return null;
     }
 
     public void uploadBlock(FileBlockAnswerMessage block) {
@@ -108,5 +106,11 @@ public class DownloadTaskManager {
             lock.unlock();
         }
     }
+
+    // TODO: Implementar método para verificar se todos os blocos foram baixados
+
+    // TODO: Implementar método com barreira para juntar os blocos baixados e salvar o arquivo (chamar a classe UploadFile)
+
+    // TODO: Implementar método para anunciar que o download foi concluído
 
 }

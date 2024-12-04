@@ -1,11 +1,13 @@
 package util;
 
+import Messages.FileBlockAnswerMessage;
+import Messages.FileBlockRequestMessage;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -32,6 +34,15 @@ public class FolderReader {
         return files;
     }
 
+    public FileBlockAnswerMessage getFileBlock(FileBlockRequestMessage request) {
+        for (TorrentFile file : files) {
+            if (file.getFileHash().equals(request.getFileHash())) {
+                return file.getFileBlock(request);
+            }
+        }
+        return null;
+    }
+
     private static String calculateFileHash(File file) throws NoSuchAlgorithmException, IOException {
         MessageDigest messageDigester = MessageDigest.getInstance("SHA-256");
         try (FileInputStream stream = new FileInputStream(file)) {
@@ -51,5 +62,7 @@ public class FolderReader {
 
         return sb.toString();
     }
+
+    // TODO: Implement a method to update the file map with the downloaded files
 
 }

@@ -10,11 +10,17 @@ public class FileBlockRequestMessage implements Serializable {
     private final String fileHash;
     private final long offset;
     private final int length;
+    private final int senderPort;
 
-    public FileBlockRequestMessage(String fileHash, long offset, int length) {
+    public FileBlockRequestMessage(String fileHash, long offset, int length, int senderPort) {
         this.fileHash = fileHash;
         this.offset = offset;
         this.length = length;
+        this.senderPort = senderPort;
+    }
+
+    public int getSenderPort() {
+        return senderPort;
     }
 
     public String getFileHash() {
@@ -28,5 +34,7 @@ public class FileBlockRequestMessage implements Serializable {
     public int getLength() {
         return length;
     }
+
+    // TODO: Implementar método toString
 
 }

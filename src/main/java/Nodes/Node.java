@@ -1,10 +1,9 @@
 package Nodes;
 
 import Execute.ConnectionListener;
+import Execute.DownloadTaskManager;
 import Execute.DownloadsWindow;
-import Messages.NewConnectionRequest;
-import Messages.NewDisconnectionRequest;
-import Messages.WordSearchMessage;
+import Messages.*;
 import util.Connection;
 import util.FolderReader;
 import util.TorrentFile;
@@ -27,6 +26,7 @@ public class Node {
     private Set<Connection> activeConnections;
     private NodeListener listener;
     private Map<FileSearchResult, List<Connection>> consolidatedResults = new HashMap<>();
+    private Set<DownloadTaskManager> activeDownloads = new HashSet<>();
 
 
     // TODO EXTRA PELO STOR - Criar thread pool para limitar o numero de tarefas que se pode fazer (SÓ NO FINAL)
@@ -44,6 +44,10 @@ public class Node {
 
     public void setConnectionListener(ConnectionListener connectionListener) {
         this.connectionListener = connectionListener;
+    }
+
+    public int getPort() {
+        return port;
     }
 
     public void notifyConnectionUpdated() {
@@ -67,6 +71,10 @@ public class Node {
             }
         }
         return true;
+    }
+
+    public void startDownload(DownloadTaskManager downloads) {
+        activeDownloads.add(downloads);
     }
 
     public void connectToNode(String address, int port) {
@@ -210,6 +218,19 @@ public class Node {
     public void clearConsolidatedResults() {
         consolidatedResults.clear();
         System.out.println("Mapa consolidado de resultados limpo.");
+    }
+
+    public FileBlockAnswerMessage handleBlockRequest(FileBlockRequestMessage request) {
+        return directory.getFileBlock(request);
+    }
+
+    public void handleBlockAnswer(FileBlockAnswerMessage answer) {
+        for(DownloadTaskManager download : activeDownloads) {
+            if (download.getFileHash().equals(answer.getFileHash())) {
+                download.uploadBlock(answer);
+                break;
+            }
+        }
     }
 
     public Set<Connection> getActiveConnections() {

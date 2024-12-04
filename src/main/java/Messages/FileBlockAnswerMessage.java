@@ -28,4 +28,6 @@ public class FileBlockAnswerMessage implements Serializable {
 
     public String getFileHash() { return fileHash; }
 
+    // TODO: Implementar método toString
+
 }

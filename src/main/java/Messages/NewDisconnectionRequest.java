@@ -20,4 +20,6 @@ public class NewDisconnectionRequest implements Serializable {
         return port;
     }
 
+    // TODO: Implementar método toString
+
 }

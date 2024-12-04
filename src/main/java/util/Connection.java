@@ -40,6 +40,11 @@ public class Connection extends Thread {
     }
 
     @Override
+    public String toString() {
+        return address + ":" + port;
+    }
+
+    @Override
     public void run() {
         try {
             while (true) {
@@ -75,15 +80,9 @@ public class Connection extends Thread {
         return in;
     }
 
-    public FileBlockAnswerMessage requestBlock(FileBlockRequestMessage blockRequest) throws IOException, ClassNotFoundException {
+    public void requestBlock(FileBlockRequestMessage blockRequest) throws IOException, ClassNotFoundException {
         out.writeObject(blockRequest);
         out.flush();
-        while(true) {
-            Object receivedMessage = in.readObject();
-            if (receivedMessage instanceof FileBlockAnswerMessage message) {
-                return message;
-            }
-        }
     }
 
     private void handleDisconnection(NewDisconnectionRequest request) throws IOException {
@@ -107,11 +106,6 @@ public class Connection extends Thread {
         return (address.equals(this.address) && port == this.port);
     }
 
-    @Override
-    public String toString() {
-        return address + ":" + port;
-    }
-
     public void establishConnection(NewConnectionRequest request) {
         try {
             out.writeObject(request);
@@ -120,18 +114,6 @@ public class Connection extends Thread {
             System.err.println("Erro ao estabelecer conexão: " + e.getMessage());
         }
     }
-
-    public void sendMessage(Serializable message) throws IOException {
-        synchronized (out) {
-            out.writeObject(message);
-            out.flush();
-        }
-    }
-
-    public Object receiveMessage() throws IOException, ClassNotFoundException {
-        return in.readObject();
-    }
-
 
 }
 

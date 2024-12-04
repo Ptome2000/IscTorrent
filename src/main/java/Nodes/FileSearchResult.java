@@ -45,4 +45,6 @@ public class FileSearchResult implements Serializable {
     public int getPort() {
         return port;
     }
+
+    // TODO: Implementar método toString
 }

@@ -19,4 +19,6 @@ public class NewConnectionRequest implements Serializable {
     public int getPort() {
         return port;
     }
+
+    // TODO: Implementar método toString
 }

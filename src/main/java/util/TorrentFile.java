@@ -2,7 +2,6 @@ package util;
 
 import Messages.FileBlockAnswerMessage;
 import Messages.FileBlockRequestMessage;
-import Nodes.FileSearchResult;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -18,10 +17,6 @@ public class TorrentFile {
 
     public String getFileHash() { return fileHash; }
 
-    public List<FileBlockAnswerMessage> getFileBlocks() {
-        return fileBlocks;
-    }
-
     public String getName() {
         return this.file.getName();
     }
@@ -30,6 +25,15 @@ public class TorrentFile {
         this.file = file;
         this.fileHash = fileHash;
         this.fileBlocks = createBlocks();
+    }
+
+    public FileBlockAnswerMessage getFileBlock(FileBlockRequestMessage request) {
+        for (FileBlockAnswerMessage block : fileBlocks) {
+            if (block.getOffset() == request.getOffset() && block.getLength() == request.getLength()) {
+                return block;
+            }
+        }
+        return null;
     }
 
     private List<FileBlockAnswerMessage> createBlocks() {
@@ -45,5 +49,7 @@ public class TorrentFile {
         }
         return blocks;
     }
+
+    // TODO: Implementar método toString
 
 }
