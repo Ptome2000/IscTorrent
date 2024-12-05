@@ -7,5 +7,7 @@ public class UploadFile implements Runnable {
     @Override
     public void run() {
 
+        // TODO : Implementar um sort para ordenar os blocos (através do offset)
+
     }
 }
