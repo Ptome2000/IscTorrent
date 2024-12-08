@@ -190,7 +190,7 @@ public class DownloadsWindow extends JFrame implements ConnectionListener, Downl
         }
 
         // Adicionar tempo decorrido
-        JLabel elapsedTimeLabel = new JLabel("Tempo decorrido: " + elapsedTime + " segundos");
+        JLabel elapsedTimeLabel = new JLabel("Tempo decorrido: " + elapsedTime + " milisegundos");
         detailsPanel.add(elapsedTimeLabel);
 
         // Botão de OK para fechar a janela

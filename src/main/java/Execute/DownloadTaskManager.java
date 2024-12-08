@@ -141,10 +141,11 @@ public class DownloadTaskManager {
                     return; // Ignora blocos com tamanho incorreto
                 }
                 downloadedBlocks.add(block);
-                blocksDownloaded++;
-                System.out.println(blocksDownloaded + " blocks downloaded");
                 latch.countDown();
-                System.out.println("Block with Offset: " + block.getOffset() + " added to downloaded blocks");
+                if (latch.getCount() == 0) {
+                    notifyDownloadComplete();
+                }
+
 
             } else {
                 System.out.println("Duplicate block received, ignoring block");
@@ -153,6 +154,18 @@ public class DownloadTaskManager {
             lock.unlock();
         }
     }
+
+    private void notifyDownloadComplete() {
+        long elapsedTime = (System.currentTimeMillis() - startTime);
+        System.out.println(System.currentTimeMillis() + "-" + startTime + " = " + elapsedTime);
+        System.out.println(System.currentTimeMillis()/1000 + "-" + startTime/1000 + " = " + elapsedTime);
+
+
+        if (downloadCompletionListener != null) {
+            downloadCompletionListener.onDownloadComplete(nodeBlockCounts, elapsedTime);
+        }
+    }
+
 
 
     // TODO: Implementar método para verificar se todos os blocos foram baixados
