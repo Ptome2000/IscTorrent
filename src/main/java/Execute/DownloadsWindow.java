@@ -11,7 +11,7 @@ import java.awt.event.ActionListener;
 import java.util.List;
 import java.util.Map;
 
-public class DownloadsWindow extends JFrame implements ConnectionListener {
+public class DownloadsWindow extends JFrame implements ConnectionListener, DownloadCompletionListener {
 
     private final ConnectionWindow connectionWindow;
     private JPanel searchHeader;
@@ -110,12 +110,13 @@ public class DownloadsWindow extends JFrame implements ConnectionListener {
                     FileSearchResult fileToDownload = findFileFromString(selectedValue);
                     if (fileToDownload != null) {
                         List<Connection> nodesWithFile = node.getConsolidatedResults().get(fileToDownload);
-                        DownloadTaskManager downloadTaskManager = new DownloadTaskManager(fileToDownload, nodesWithFile, node);
+                        DownloadTaskManager downloadTaskManager = new DownloadTaskManager(fileToDownload, nodesWithFile, node, DownloadsWindow.this);
                         node.startDownload(downloadTaskManager);
                     }
                 }
             }
         });
+
 
         this.connectButton.addActionListener(e -> showConnectionWindow());
     }
@@ -171,6 +172,47 @@ public class DownloadsWindow extends JFrame implements ConnectionListener {
             searchResultsModel.addElement(displayString.toString());
         }
     }
+
+    private void showCompletionWindow(Map<String, Integer> nodeBlockCounts, long elapsedTime) {
+        JDialog dialog = new JDialog((Frame) null, "Download Completo", true);
+        dialog.setSize(400, 300);
+        dialog.setLayout(new BorderLayout());
+
+        // Painel para exibir detalhes
+        JPanel detailsPanel = new JPanel();
+        detailsPanel.setLayout(new BoxLayout(detailsPanel, BoxLayout.Y_AXIS));
+
+        // Adicionar informações de cada nó e blocos baixados
+        for (Map.Entry<String, Integer> entry : nodeBlockCounts.entrySet()) {
+            String nodeDetails = "Node: " + entry.getKey() + " - Blocos: " + entry.getValue();
+            JLabel label = new JLabel(nodeDetails);
+            detailsPanel.add(label);
+        }
+
+        // Adicionar tempo decorrido
+        JLabel elapsedTimeLabel = new JLabel("Tempo decorrido: " + elapsedTime + " segundos");
+        detailsPanel.add(elapsedTimeLabel);
+
+        // Botão de OK para fechar a janela
+        JButton okButton = new JButton("OK");
+        okButton.addActionListener(e -> dialog.dispose());
+
+        // Adicionar componentes ao diálogo
+        dialog.add(new JScrollPane(detailsPanel), BorderLayout.CENTER);
+        dialog.add(okButton, BorderLayout.SOUTH);
+
+        // Tornar visível
+        dialog.setLocationRelativeTo(null);
+        dialog.setVisible(true);
+    }
+
+
+    @Override
+    public void onDownloadComplete(Map<String, Integer> nodeBlockCounts, long elapsedTime) {
+        SwingUtilities.invokeLater(() -> showCompletionWindow(nodeBlockCounts, elapsedTime));
+    }
+
+
 
 
 

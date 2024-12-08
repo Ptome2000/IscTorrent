@@ -46,6 +46,12 @@ public class Node {
         this.connectionListener = connectionListener;
     }
 
+    public String folderPath() {
+        return directory.getFolderPath();
+    }
+
+
+
     public int getPort() {
         return port;
     }
@@ -226,6 +232,7 @@ public class Node {
 
     public void handleBlockAnswer(FileBlockAnswerMessage answer) {
         for(DownloadTaskManager download : activeDownloads) {
+            System.out.println("Download: " + download.getFileHash() + " Answer: " + answer.getFileHash());
             if (download.getFileHash().equals(answer.getFileHash())) {
                 download.uploadBlock(answer);
                 break;

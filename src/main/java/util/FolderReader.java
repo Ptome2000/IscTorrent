@@ -63,6 +63,10 @@ public class FolderReader {
         return sb.toString();
     }
 
+    public String getFolderPath() {
+        return files.iterator().next().getFile().getParent();
+    }
+
     // TODO: Implement a method to update the file map with the downloaded files
 
 }
