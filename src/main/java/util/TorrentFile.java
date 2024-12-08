@@ -4,6 +4,8 @@ import Messages.FileBlockAnswerMessage;
 import Messages.FileBlockRequestMessage;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,10 +44,19 @@ public class TorrentFile {
         int blockSize = Constants.BLOCK_SIZE;
         long offset = 0;
 
-        while (offset < fileSize) {
-            int length = (int) Math.min(blockSize, fileSize - offset);
-            blocks.add(new FileBlockAnswerMessage(new byte[length], offset, length, fileHash));
-            offset += length;
+        try {
+            byte[] fileContents = Files.readAllBytes(file.toPath());
+            while (offset < fileSize) {
+                // The length will either be the default block size or the remaining bytes
+                int length = (int) Math.min(blockSize, fileSize - offset);
+                byte[] blockData = new byte[length];
+                // Arraycopy will copy from the fileContents array, starting at the offset, to the blockData array
+                System.arraycopy(fileContents, (int) offset, blockData, 0, length);
+                blocks.add(new FileBlockAnswerMessage(blockData, offset, length, fileHash));
+                offset += length;
+            }
+        } catch (IOException e) {
+            System.err.println("Error reading file contents: " + e.getMessage());
         }
         return blocks;
     }
