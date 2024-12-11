@@ -108,6 +108,16 @@ public class ConnectionWindow extends JDialog {
         return null;
     }
 
-    public void showErrorMessage(String errorMessage) {
+    public void showErrorMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "Erro", JOptionPane.ERROR_MESSAGE);
     }
+
+    public void showWarningMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "Atenção", JOptionPane.WARNING_MESSAGE);
+    }
+
+    public void showInfoMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "Informação", JOptionPane.INFORMATION_MESSAGE);
+    }
+
 }

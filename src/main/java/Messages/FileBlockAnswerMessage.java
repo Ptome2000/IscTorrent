@@ -28,6 +28,8 @@ public class FileBlockAnswerMessage implements Serializable {
 
     public String getFileHash() { return fileHash; }
 
-    // TODO: Implementar método toString
+    public String toString() {
+        return "Block " + offset + " of " + fileHash;
+    }
 
 }

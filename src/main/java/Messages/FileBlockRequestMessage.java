@@ -35,6 +35,8 @@ public class FileBlockRequestMessage implements Serializable {
         return length;
     }
 
-    // TODO: Implementar método toString
+    public String toString() {
+        return senderPort + " wants block " + offset + " of " + fileHash;
+    }
 
 }

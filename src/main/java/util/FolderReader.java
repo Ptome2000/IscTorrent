@@ -14,8 +14,10 @@ import java.util.Set;
 public class FolderReader {
 
     private Set<TorrentFile> files;
+    private final String path;
 
     public FolderReader(String path) {
+        this.path = path;
         File[] fileList = new File(path).listFiles(); // TODO Need for filter?
         assert fileList != null;
         this.files = new HashSet<>();
@@ -64,9 +66,17 @@ public class FolderReader {
     }
 
     public String getFolderPath() {
-        return files.iterator().next().getFile().getParent();
+        return this.path;
     }
 
-    // TODO: Implement a method to update the file map with the downloaded files
+    public void updateFiles(File file) {
+        try {
+            String hash = calculateFileHash(file);
+            TorrentFile tf = new TorrentFile(file, hash);
+            files.add(tf);
+        } catch (NoSuchAlgorithmException | IOException e) {
+            System.err.println("Error when calculating Hashes " + e.getMessage());
+        }
+    }
 
 }

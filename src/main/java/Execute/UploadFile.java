@@ -7,21 +7,22 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import Messages.FileBlockAnswerMessage;
+import Nodes.Node;
+import util.FolderReader;
 
 public class UploadFile implements Runnable {
 
     private final List<FileBlockAnswerMessage> downloadedBlocks;
-    private final String fileHash;
     private final String outputPath;
     private final CountDownLatch latch;
-
+    private final FolderReader directory;
 
     // Constructor
-    public UploadFile(List<FileBlockAnswerMessage> downloadedBlocks, String fileHash, String outputPath, CountDownLatch latch) {
+    public UploadFile(List<FileBlockAnswerMessage> downloadedBlocks, String outputPath, CountDownLatch latch, FolderReader directory) {
         this.downloadedBlocks = downloadedBlocks;
-        this.fileHash = fileHash;
         this.outputPath = outputPath;
         this.latch = latch;
+        this.directory = directory;
     }
 
     @Override
@@ -57,14 +58,13 @@ public class UploadFile implements Runnable {
             System.arraycopy(block.getData(), 0, fileData, (int) block.getOffset(), block.getLength());
         }
 
-
         return fileData;
     }
-
 
     // Save the complete file to disk
     private void saveToFile(byte[] completeFile) throws IOException {
         File outputFile = new File(outputPath);
         Files.write(outputFile.toPath(), completeFile);
+        this.directory.updateFiles(outputFile);
     }
 }

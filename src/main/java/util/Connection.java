@@ -3,14 +3,10 @@ package util;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.net.Socket;
 
 import Messages.*;
-import Nodes.FileSearchResult;
 import Nodes.Node;
-
-import static java.lang.System.out;
 
 public class Connection extends Thread {
 
@@ -96,7 +92,6 @@ public class Connection extends Thread {
             out.writeObject(request);
             out.flush();
             this.interrupt();
-            System.err.println("Conexão fechada com " + address + ":" + port);
         } catch (IOException e) {
             System.err.println("Erro ao fechar a conexão: " + e.getMessage());
         }

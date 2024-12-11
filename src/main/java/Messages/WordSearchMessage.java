@@ -20,7 +20,9 @@ public class WordSearchMessage implements Serializable {
         return senderPort;
     }
 
-    // TODO: Implementar método toString
+    public String toString() {
+        return senderPort + " wants " + keyword;
+    }
 
 }
 

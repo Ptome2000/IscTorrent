@@ -1,22 +1,15 @@
 package Nodes;
 
 import Execute.ConnectionListener;
-import Execute.DownloadTaskManager;
 import Execute.DownloadsWindow;
 import Messages.*;
 import util.Connection;
 import util.FolderReader;
 import util.TorrentFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.*;
-
-
 
 public class Node {
     private ConnectionListener connectionListener;
@@ -27,9 +20,6 @@ public class Node {
     private NodeListener listener;
     private Map<FileSearchResult, List<Connection>> consolidatedResults = new HashMap<>();
     private Set<DownloadTaskManager> activeDownloads = new HashSet<>();
-
-
-    // TODO EXTRA PELO STOR - Criar thread pool para limitar o numero de tarefas que se pode fazer (SÓ NO FINAL)
 
     public Node(String address, int port, String folderPath) {
         this.address = address;
@@ -42,6 +32,22 @@ public class Node {
         listener.start();
     }
 
+    public Set<Connection> getActiveConnections() {
+        return activeConnections;
+    }
+
+    public Map<FileSearchResult, List<Connection>> getConsolidatedResults() {
+        return consolidatedResults;
+    }
+
+    public FolderReader getDirectory() {
+        return directory;
+    }
+
+    public synchronized void addActiveConnections(Connection connection) {
+        activeConnections.add(connection);
+    }
+
     public void setConnectionListener(ConnectionListener connectionListener) {
         this.connectionListener = connectionListener;
     }
@@ -50,21 +56,27 @@ public class Node {
         return directory.getFolderPath();
     }
 
-
-
     public int getPort() {
         return port;
-    }
-
-    public void notifyConnectionUpdated() {
-        if (connectionListener != null) {
-            connectionListener.onConnectionUpdated();
-        }
     }
 
     private void notifyConnectionError(String errorMessage) {
         if (connectionListener != null) {
             connectionListener.onConnectionError(errorMessage);
+        }
+    }
+
+    private void notifyConnectionSuccess(String successMessage) {
+        if (connectionListener != null) {
+            connectionListener.onConnectionUpdated();
+            connectionListener.onConnectionEstablished(successMessage);
+        }
+    }
+
+    public void notifyConnectionTerminated(String terminatedMessage) {
+        if (connectionListener != null) {
+            connectionListener.onConnectionUpdated();
+            connectionListener.onConnectionTerminated(terminatedMessage);
         }
     }
 
@@ -91,42 +103,14 @@ public class Node {
                 conn.establishConnection(request);
                 activeConnections.add(conn);
                 conn.start();
-                notifyConnectionUpdated();
-                System.out.println("Conexão estabelecida e adicionada: " + address + ":" + port);
+                notifyConnectionSuccess("Conexão estabelecida com " + conn);
             } catch (IOException e) {
                 notifyConnectionError("Erro ao estabelecer conexão: " + e.getMessage());
-                System.err.println("Problema ao estabelecer conexão: " + e.getMessage());
             }
         } else {
             notifyConnectionError("Conexão com " + address + ":" + port + " já existe ou é inválida.");
-            System.out.println("Não foi possível estabelecer conexão com " + address + ":" + port);
         }
     }
-
-
-
-/*
-    public void connectToNode(String address, int port) {
-        if (!(this.address.equals(address) && port == this.port) && validateRequest(address, port)) {
-            NewConnectionRequest request = new NewConnectionRequest(this.address, this.port); // Informações do nó remetente
-            try {
-                Connection conn = new Connection(address, port, this);
-                conn.establishConnection(request);
-                activeConnections.add(conn);
-                conn.start();
-                notifyConnectionUpdated();
-                System.out.println("Conexão estabelecida e adicionada: " + address + ":" + port);
-            } catch (IOException e) {
-                notifyConnectionError("Erro ao estabelecer conexão: " + e.getMessage());
-                System.err.println("Problema ao estabelecer conexão: " + e.getMessage());
-            }
-        } else {
-            notifyConnectionError("Conexão com " + address + ":" + port + " já existe ou é inválida.");
-            System.out.println("Não foi possível estabelecer conexão com " + address + ":" + port);
-        }
-    }
-
- */
 
     @Deprecated // Metodo Unicast de envio de mensagem
     public void sendMessageToNode(String message, String address, int port) {
@@ -147,19 +131,16 @@ public class Node {
 
     public void closeConnection(Connection connection) {
         NewDisconnectionRequest request = new NewDisconnectionRequest(this.address, this.port);
-        // TODO: With Bugs, fix later
         connection.disconnect(request);
         removeConnection(connection);
     }
 
     public void removeConnection(Connection connection) {
         activeConnections.remove(connection);
-        connectionListener.onConnectionUpdated();
+        notifyConnectionTerminated("Conexão encerrada com " + connection);
     }
 
     public List<FileSearchResult> searchFiles(WordSearchMessage searchedWord) {
-        //TODO EXTRA - Make a method to update the file map with the downloaded files?
-
         List<FileSearchResult> results = new ArrayList<>();
         Set<TorrentFile> files = directory.getFiles();
         if (files != null){
@@ -173,43 +154,45 @@ public class Node {
                 }
             }
         }
-
         return results;
     }
 
     // Metodo Broadcast de envio de mensagem
     public void requestSearch(String keyword) {
         WordSearchMessage searchMessage = new WordSearchMessage(keyword, this.port);
-        System.out.println("Enviando mensagem de pesquisa: " + keyword);
 
         for (Connection connection : activeConnections) {
             try {
                 ObjectOutputStream out = connection.getOutputStream();
                 out.writeObject(searchMessage);
                 out.flush();
-                System.out.println("Mensagem de pesquisa enviada para: " + connection.getAddress() + ":" + connection.getPort());
-                // Não feche o Socket nem o ObjectOutputStream aqui, ele permanece aberto
+                System.out.println("Mensagem de pesquisa enviada para: " + connection);
             } catch (IOException e) {
                 System.err.println("Erro ao enviar mensagem de pesquisa: " + e.getMessage());
             }
         }
     }
-/*
-    public void processSearchResults(List<FileSearchResult> results) {
-        ((DownloadsWindow) connectionListener).updateSearchResults(results);
-    }
-*/
+
     public synchronized void processSearchResults(List<FileSearchResult> results) {
         for (FileSearchResult result : results) {
-            // Adiciona o NodeInfo ao ficheiro correspondente no mapa
-            Connection connection = findConnection(result);
-            consolidatedResults
-                    .computeIfAbsent(result, k -> new ArrayList<>())
-                    .add(connection);
+            if (!findResult(result)) {
+                consolidatedResults
+                        .computeIfAbsent(result, k -> new ArrayList<>())
+                        .add(findConnection(result));
+            }
         }
-
         // Atualiza a interface gráfica com os resultados consolidados
         ((DownloadsWindow) connectionListener).updateSearchResults(new HashMap<>(consolidatedResults));
+    }
+
+    private boolean findResult(FileSearchResult result) {
+        for (FileSearchResult existingResult : consolidatedResults.keySet()) {
+            if (existingResult.getHash().equals(result.getHash())) {
+                consolidatedResults.get(existingResult).add(findConnection(result));
+                return true;
+            }
+        }
+        return false;
     }
 
     private Connection findConnection(FileSearchResult result) {
@@ -240,15 +223,4 @@ public class Node {
         }
     }
 
-    public Set<Connection> getActiveConnections() {
-        return activeConnections;
-    }
-
-    public Map<FileSearchResult, List<Connection>> getConsolidatedResults() {
-        return consolidatedResults;
-    }
-
-    public synchronized void addActiveConnections(Connection connection) {
-        activeConnections.add(connection);
-    }
 }

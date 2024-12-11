@@ -1,6 +1,7 @@
 package Execute;
 
-import Nodes.FileSearchResult;
+import Messages.FileSearchResult;
+import Nodes.DownloadTaskManager;
 import Nodes.Node;
 import util.Connection;
 
@@ -93,7 +94,6 @@ public class DownloadsWindow extends JFrame implements ConnectionListener, Downl
                 String keyword = searchInput.getText(); // Lê o texto do campo de entrada correto
                 if (!keyword.isEmpty()) {
                     node.clearConsolidatedResults();
-                    System.out.println("Texto digitado: " + keyword);
                     node.requestSearch(keyword);
                 } else {
                     JOptionPane.showMessageDialog(DownloadsWindow.this, "Digite uma palavra-chave para pesquisa.", "Atenção", JOptionPane.WARNING_MESSAGE);
@@ -116,8 +116,6 @@ public class DownloadsWindow extends JFrame implements ConnectionListener, Downl
                 }
             }
         });
-
-
         this.connectButton.addActionListener(e -> showConnectionWindow());
     }
 
@@ -139,16 +137,16 @@ public class DownloadsWindow extends JFrame implements ConnectionListener, Downl
     public void onConnectionError(String errorMessage) {
         connectionWindow.showErrorMessage(errorMessage);
     }
-/*
-    public void updateSearchResults(List<FileSearchResult> results) {
-        searchResultsModel.clear();
 
-        for (FileSearchResult result : results) {
-            searchResultsModel.addElement(result.getName() + " - " + result.getAddress() + ":" + result.getPort());
-        }
+    @Override
+    public void onConnectionEstablished(String successMessage) {
+        connectionWindow.showInfoMessage(successMessage);
     }
 
- */
+    @Override
+    public void onConnectionTerminated(String terminatedMessage) {
+        connectionWindow.showWarningMessage(terminatedMessage);
+    }
 
     public synchronized void updateSearchResults(Map<FileSearchResult, List<Connection>> consolidatedResults) {
         searchResultsModel.clear(); // Limpa os resultados anteriores
@@ -158,7 +156,7 @@ public class DownloadsWindow extends JFrame implements ConnectionListener, Downl
             List<Connection> nodes = entry.getValue();
 
             // Cria a string para exibição
-            StringBuilder displayString = new StringBuilder(fileName + " - ");
+            StringBuilder displayString = new StringBuilder(fileName + " - " + nodes.size() + " -> (");
             for (Connection node : nodes) {
                 displayString.append(node.toString()).append(", ");
             }
@@ -167,6 +165,7 @@ public class DownloadsWindow extends JFrame implements ConnectionListener, Downl
             if (displayString.length() > 2) {
                 displayString.setLength(displayString.length() - 2);
             }
+            displayString.append(")");
 
             // Adiciona o resultado à interface gráfica
             searchResultsModel.addElement(displayString.toString());
@@ -206,14 +205,9 @@ public class DownloadsWindow extends JFrame implements ConnectionListener, Downl
         dialog.setVisible(true);
     }
 
-
     @Override
     public void onDownloadComplete(Map<String, Integer> nodeBlockCounts, long elapsedTime) {
         SwingUtilities.invokeLater(() -> showCompletionWindow(nodeBlockCounts, elapsedTime));
     }
-
-
-
-
 
 }

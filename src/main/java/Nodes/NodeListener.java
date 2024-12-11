@@ -11,13 +11,12 @@ import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
 public class NodeListener extends Thread {
 
     private final Node parentNode;
     private final int port;
-    private ExecutorService threadPool = Executors.newFixedThreadPool(10);
+    private final ExecutorService threadPool = Executors.newFixedThreadPool(10);
 
     public NodeListener(Node parentNode, int port) {
         this.parentNode = parentNode;
@@ -38,16 +37,9 @@ public class NodeListener extends Thread {
             System.out.println("NodeListener is listening on port " + port);
 
             while (true) {
-                System.out.println("Aguardando conexão...");
                 Socket socket = serverSocket.accept();
-                System.out.println("Conexão aceita de " + socket.getInetAddress() + ":" + socket.getPort());
-
-                // Inicia uma nova thread para processar as mensagens do cliente conectado
-                // TODO - Mudar para uma worker Thread?
-
                 //new Thread(() -> handleClient(socket)).start();
                 threadPool.execute(() -> handleClient(socket));
-
             }
         }
     }
@@ -62,44 +54,39 @@ public class NodeListener extends Thread {
                 while (true) {
                     Object receivedObject = in.readObject();
 
-                    // TODO: Implementar um switch-case para processar diferentes tipos de mensagens
-                    // TODO: Mover para uma class chamada MessageHandler
-
-                    if (receivedObject instanceof WordSearchMessage searchMessage) {
-                        System.out.println("WordSearchMessage recebida com palavra-chave: " + searchMessage.getKeyword());
-                        processSearchMessage(searchMessage);
-
-                    } else if (receivedObject instanceof NewConnectionRequest request) {
-                        System.out.println("NewConnectionRequest recebida de: " + request.getAddress() + ":" + request.getPort());
-                        handleNewConnection(request);
-
-                    } else if (receivedObject instanceof NewDisconnectionRequest request) {
-                        System.out.println("NewDisconnectionRequest recebida de: " + request.getAddress() + ":" + request.getPort());
-                        handleDisconnection(request, socket);
-
-                    } else if (receivedObject instanceof FileBlockRequestMessage request) {
-                        System.out.println("FileBlockRequestMessage recebida para o offset: " + request.getOffset());
-                        handleBlockRequest(request);
-
-                    } else if (receivedObject instanceof FileBlockAnswerMessage request) {
-                        System.out.println("FileBlockAnswerMessage recebida para o offset: " + request.getOffset());
-                        handleBlockAnswer(request);
-
-                } else if (receivedObject instanceof List<?>) {
-
-                        // TODO: Implementar um método para processar a lista de resultados de pesquisa
-
-                    try {
-                        @SuppressWarnings("unchecked")
-                        List<FileSearchResult> results = (List<FileSearchResult>) receivedObject;
-                        System.out.println("Lista de FileSearchResult recebida com " + results.size() + " resultados.");
-                        parentNode.processSearchResults(results);
-                    } catch (ClassCastException e) {
-                        System.err.println("Erro ao processar os resultados da pesquisa: " + e.getMessage());
+                    switch (receivedObject) {
+                        case WordSearchMessage searchMessage -> {
+                            System.out.println("WordSearchMessage recebida: " + searchMessage);
+                            handleSearchMessage(searchMessage);
+                        }
+                        case NewConnectionRequest request -> {
+                            System.out.println("NewConnectionRequest recebida de: " + request);
+                            handleNewConnection(request);
+                        }
+                        case NewDisconnectionRequest request -> {
+                            System.out.println("NewDisconnectionRequest recebida de: " + request);
+                            handleDisconnection(request, socket);
+                        }
+                        case FileBlockRequestMessage request -> {
+                            System.out.println("FileBlockRequestMessage recebida: " + request);
+                            handleBlockRequest(request);
+                        }
+                        case FileBlockAnswerMessage request -> {
+                            System.out.println("FileBlockAnswerMessage recebida: " + request);
+                            handleBlockAnswer(request);
+                        }
+                        case List<?> results -> {
+                            try {
+                                @SuppressWarnings("unchecked")
+                                List<FileSearchResult> fileSearchResults = (List<FileSearchResult>) results;
+                                System.out.println("Lista de FileSearchResult recebida com " + fileSearchResults.size() + " resultados.");
+                                parentNode.processSearchResults(fileSearchResults);
+                            } catch (ClassCastException e) {
+                                System.err.println("Erro ao processar os resultados da pesquisa: " + e.getMessage());
+                            }
+                        }
+                        default -> System.out.println("Objeto desconhecido foi recebido: " + receivedObject.getClass().getName());
                     }
-                } else {
-                    System.out.println("Tipo de objeto inesperado recebido: " + receivedObject.getClass().getName());
-                }
             }
         } catch (IOException e) {
             System.err.println("Erro ao processar cliente: " + e.getMessage());
@@ -114,11 +101,9 @@ public class NodeListener extends Thread {
         }
     }
 
-    private void processSearchMessage(WordSearchMessage searchMessage) {
+    private void handleSearchMessage(WordSearchMessage searchMessage) {
         // Procura arquivos locais que correspondem à pesquisa
         List<FileSearchResult> results = parentNode.searchFiles(searchMessage);
-        System.out.println("Número de resultados encontrados: " + results.size());
-        System.out.println(results);
         // Envia os resultados de volta ao nó
         try {
             Connection conn = parentNode.getActiveConnections().stream()
@@ -128,8 +113,6 @@ public class NodeListener extends Thread {
             ObjectOutputStream out = conn.getOutputStream();
             out.writeObject(results);
             out.flush();
-            System.out.println("Resultados de pesquisa enviados de volta.");
-
         } catch (IOException e) {
             System.err.println("Erro ao enviar resultados de pesquisa: " + e.getMessage());
         }
@@ -140,7 +123,6 @@ public class NodeListener extends Thread {
             if (parentNode.getActiveConnections().stream().noneMatch(
                     conn -> conn.getAddress().equals(request.getAddress()) &&
                             conn.getPort() == request.getPort())) {
-                System.out.println("Nova conexão recebida de: " + request.getAddress() + ":" + request.getPort());
                 // Cria uma nova Connection com o socket recebido
                 try {
                     Connection conn = new Connection(request.getAddress(), request.getPort(), this.parentNode);
@@ -148,22 +130,18 @@ public class NodeListener extends Thread {
                         conn.start();
                     }
                     parentNode.addActiveConnections(conn);
-                    System.out.println("Conexão adicionada e iniciada: " + conn.getAddress() + ":" + conn.getPort());
+                    System.out.println("Conexão adicionada e iniciada: " + conn);
                 } catch (IOException e) {
                     System.err.println("Erro ao criar a conexão: " + e.getMessage());
                 }
 
                 if (!parentNode.getActiveConnections().isEmpty()) {
-                for (Connection connection : parentNode.getActiveConnections()) {
-                    System.out.println("Conexões ativas: " + connection.getAddress() + ":" + connection.getPort());
+                    for (Connection connection : parentNode.getActiveConnections()) {
+                        System.out.println("Conexões ativas: " + connection);
+                    }
                 }
-                }
-                else {
-                    System.out.println("Conexão nao ha ");
-                }
-                //System.out.println("Conexão adicionada e iniciada: " + conn.getAddress() + ":" + conn.getPort());
             } else {
-                System.out.println("Conexão já existente: " + request.getAddress() + ":" + request.getPort());
+                System.out.println("Conexão já existente: " + request);
             }
         }
     }
@@ -195,6 +173,5 @@ public class NodeListener extends Thread {
         }
         socket.close();
     }
-
 
 }
