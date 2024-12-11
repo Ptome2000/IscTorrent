@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.locks.Condition;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -55,8 +54,11 @@ public class DownloadTaskManager {
 
     private synchronized void initializeNodeBlockCounts() {
         for (Connection connection : nodesWithFile) {
-            String nodeKey = connection.getAddress() + ":" + connection.getPort();
-            nodeBlockCounts.put(nodeKey, 0);
+            if(!connection.equals(parentNode.getAdress(), parentNode.getPort())) {
+                String nodeKey = connection.getAddress() + ":" + connection.getPort();
+                nodeBlockCounts.put(nodeKey, 0);
+            }
+
         }
     }
     private void incrementNodeBlockCount(String address, int port) {
@@ -116,7 +118,6 @@ public class DownloadTaskManager {
         for (Connection connection : nodesWithFile) {
             try {
                 connection.requestBlock(blockRequest);
-                incrementNodeBlockCount(connection.getAddress(), connection.getPort());
                 System.out.println("Block requested from " + connection.getAddress() + ":" + connection.getPort());
             } catch (IOException | ClassNotFoundException e) {
                 System.err.println("Error requesting block: " + e.getMessage());
@@ -134,6 +135,7 @@ public class DownloadTaskManager {
                     return; // Ignora blocos com tamanho incorreto
                 }
                 downloadedBlocks.add(block);
+                incrementNodeBlockCount(block.getAdress(), block.getPort());
                 System.out.println("falta " + latch.getCount() + " blocos");
                 latch.countDown();
 

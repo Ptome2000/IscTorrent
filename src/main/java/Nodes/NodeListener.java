@@ -148,6 +148,8 @@ public class NodeListener extends Thread {
 
     private void handleBlockRequest(FileBlockRequestMessage request) {
         FileBlockAnswerMessage answer = parentNode.handleBlockRequest(request);
+        answer.setAdress(parentNode.getAdress());
+        answer.setPort(parentNode.getPort());
         Connection conn = parentNode.getActiveConnections().stream()
                 .filter(c -> c.getPort() == request.getSenderPort())
                 .findFirst()

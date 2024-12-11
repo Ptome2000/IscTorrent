@@ -60,6 +60,10 @@ public class Node {
         return port;
     }
 
+    public String getAdress() {
+        return address;
+    }
+
     private void notifyConnectionError(String errorMessage) {
         if (connectionListener != null) {
             connectionListener.onConnectionError(errorMessage);
@@ -222,5 +226,7 @@ public class Node {
             }
         }
     }
+
+
 
 }
