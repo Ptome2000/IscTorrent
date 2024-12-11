@@ -68,7 +68,7 @@ public class Connection extends Thread {
         return socket;
     }
 
-    public ObjectOutputStream getOutputStream() {
+    public synchronized ObjectOutputStream getOutputStream() {
         return out;
     }
 

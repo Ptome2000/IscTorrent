@@ -55,7 +55,7 @@ public class DownloadTaskManager {
         startDownload();
     }
 
-    private void initializeNodeBlockCounts() {
+    private synchronized void initializeNodeBlockCounts() {
         for (Connection connection : nodesWithFile) {
             String nodeKey = connection.getAddress() + ":" + connection.getPort();
             nodeBlockCounts.put(nodeKey, 0);
@@ -114,11 +114,12 @@ public class DownloadTaskManager {
         }
     }
 
-    private void requestBlockFromNode(FileBlockRequestMessage blockRequest) {
+    private synchronized void requestBlockFromNode(FileBlockRequestMessage blockRequest) {
         for (Connection connection : nodesWithFile) {
             try {
                 connection.requestBlock(blockRequest);
                 incrementNodeBlockCount(connection.getAddress(), connection.getPort());
+                System.out.println("Block requested from " + connection.getAddress() + ":" + connection.getPort());
             } catch (IOException | ClassNotFoundException e) {
                 System.err.println("Error requesting block: " + e.getMessage());
             }
@@ -130,13 +131,18 @@ public class DownloadTaskManager {
         try {
             System.out.println("Block received: " + block.toString());
             if (!downloadedBlocks.contains(block)) {
+                // TODO: Nao sei como entra aqui se o blovo ja foi baixado, mas esta a entrar
                 if (block.getData().length != block.getLength()) {
                     System.err.println("Bloco com offset " + block.getOffset() + " tem tamanho incorreto. Ignorado.");
                     return; // Ignora blocos com tamanho incorreto
                 }
                 downloadedBlocks.add(block);
+                System.out.println("falta " + latch.getCount() + " blocos");
                 latch.countDown();
-                if (latch.getCount() == 0) {
+
+                if (latch.getCount() == 0 && !downloadComplete) {
+                    downloadComplete = true;
+                    threadPool.shutdown();
                     notifyDownloadComplete();
                 }
             } else {

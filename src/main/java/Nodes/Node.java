@@ -32,11 +32,11 @@ public class Node {
         listener.start();
     }
 
-    public Set<Connection> getActiveConnections() {
+    public synchronized Set<Connection> getActiveConnections() {
         return activeConnections;
     }
 
-    public Map<FileSearchResult, List<Connection>> getConsolidatedResults() {
+    public synchronized Map<FileSearchResult, List<Connection>> getConsolidatedResults() {
         return consolidatedResults;
     }
 
@@ -213,7 +213,7 @@ public class Node {
         return directory.getFileBlock(request);
     }
 
-    public void handleBlockAnswer(FileBlockAnswerMessage answer) {
+    public synchronized void handleBlockAnswer(FileBlockAnswerMessage answer) {
         for(DownloadTaskManager download : activeDownloads) {
             System.out.println("Download: " + download.getFileHash() + " Answer: " + answer.getFileHash());
             if (download.getFileHash().equals(answer.getFileHash())) {
