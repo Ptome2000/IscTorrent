@@ -36,7 +36,6 @@ public class DownloadTaskManager {
     private final String fileName;
     private final DownloadCompletionListener downloadCompletionListener;
     private long startTime;
-    boolean downloadComplete;
 
     public DownloadTaskManager(FileSearchResult file, List<Connection> nodesWithFile, Node parentNode, DownloadCompletionListener listener) {
         this.parentNode = parentNode;
@@ -46,7 +45,6 @@ public class DownloadTaskManager {
         this.nodesWithFile = nodesWithFile;
         this.threadPool = Executors.newFixedThreadPool(nodesWithFile.size());
         this.downloadCompletionListener = listener;
-        this.downloadComplete = false;
         initializeNodeBlockCounts();
         this.latch = new CountDownLatch(blocksToDownload.size());
 
@@ -130,8 +128,7 @@ public class DownloadTaskManager {
         lock.lock();
         try {
             System.out.println("Block received: " + block.toString());
-            if (!downloadedBlocks.contains(block)) {
-                // TODO: Nao sei como entra aqui se o blovo ja foi baixado, mas esta a entrar
+            if (!isBlockDownloaded(block)) {
                 if (block.getData().length != block.getLength()) {
                     System.err.println("Bloco com offset " + block.getOffset() + " tem tamanho incorreto. Ignorado.");
                     return; // Ignora blocos com tamanho incorreto
@@ -140,8 +137,7 @@ public class DownloadTaskManager {
                 System.out.println("falta " + latch.getCount() + " blocos");
                 latch.countDown();
 
-                if (latch.getCount() == 0 && !downloadComplete) {
-                    downloadComplete = true;
+                if (latch.getCount() == 0) {
                     threadPool.shutdown();
                     notifyDownloadComplete();
                 }
@@ -151,6 +147,15 @@ public class DownloadTaskManager {
         } finally {
             lock.unlock();
         }
+    }
+
+    private boolean isBlockDownloaded(FileBlockAnswerMessage block) {
+        for (FileBlockAnswerMessage downloadedBlock : downloadedBlocks) {
+            if (downloadedBlock.getOffset() == block.getOffset()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void notifyDownloadComplete() {

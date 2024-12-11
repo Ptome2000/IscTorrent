@@ -57,7 +57,6 @@ public class UploadFile implements Runnable {
         for (FileBlockAnswerMessage block : downloadedBlocks) {
             System.arraycopy(block.getData(), 0, fileData, (int) block.getOffset(), block.getLength());
         }
-
         return fileData;
     }
 
