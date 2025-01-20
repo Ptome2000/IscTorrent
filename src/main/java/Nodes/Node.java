@@ -106,7 +106,6 @@ public class Node {
                 Connection conn = new Connection(address, port, this);
                 conn.establishConnection(request);
                 activeConnections.add(conn);
-                conn.start();
                 notifyConnectionSuccess("Conexão estabelecida com " + conn);
             } catch (IOException e) {
                 notifyConnectionError("Erro ao estabelecer conexão: " + e.getMessage());

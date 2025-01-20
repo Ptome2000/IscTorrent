@@ -68,7 +68,7 @@ public class DownloadsWindow extends JFrame implements ConnectionListener, Downl
     private void createList() {
         this.searchResultsModel = new DefaultListModel<>();
         this.searchResultsList = new JList<>(searchResultsModel);
-        this.searchResultsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        this.searchResultsList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         this.filesPane = new JScrollPane(searchResultsList);
     }
 
@@ -104,15 +104,18 @@ public class DownloadsWindow extends JFrame implements ConnectionListener, Downl
         this.downloadButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                int selectedIndex = searchResultsList.getSelectedIndex();
-                if (selectedIndex != -1) {
-                    String selectedValue = searchResultsModel.getElementAt(selectedIndex);
-                    FileSearchResult fileToDownload = findFileFromString(selectedValue);
-                    if (fileToDownload != null) {
-                        List<Connection> nodesWithFile = node.getConsolidatedResults().get(fileToDownload);
-                        DownloadTaskManager downloadTaskManager = new DownloadTaskManager(fileToDownload, nodesWithFile, node, DownloadsWindow.this);
-                        node.startDownload(downloadTaskManager);
+                List<String> selectedValues = searchResultsList.getSelectedValuesList();
+                if (!selectedValues.isEmpty()) {
+                    for (String file: selectedValues) {;
+                        FileSearchResult fileToDownload = findFileFromString(file);
+                        if (fileToDownload != null) {
+                            List<Connection> nodesWithFile = node.getConsolidatedResults().get(fileToDownload);
+                            DownloadTaskManager downloadTaskManager = new DownloadTaskManager(fileToDownload, nodesWithFile, node, DownloadsWindow.this);
+                            node.startDownload(downloadTaskManager);
+                        }
                     }
+                } else {
+                    JOptionPane.showMessageDialog(DownloadsWindow.this, "Please select one or more files to download.", "Warning", JOptionPane.WARNING_MESSAGE);
                 }
             }
         });

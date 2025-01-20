@@ -47,8 +47,7 @@ public class NodeListener extends Thread {
     }
 
     private void handleClient(Socket socket) {
-        try (ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-             ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
+        try (ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
 
             while (!socket.isClosed()) {
                 Object receivedObject = in.readObject();
@@ -120,13 +119,9 @@ public class NodeListener extends Thread {
         lock.lock();
         try {
             if (parentNode.getActiveConnections().stream().noneMatch(
-                    conn -> conn.getAddress().equals(request.getAddress()) &&
-                            conn.getPort() == request.getPort())) {
+                    conn -> conn.getAddress().equals(request.getAddress()) && conn.getPort() == request.getPort())) {
                 try {
                     Connection conn = new Connection(request.getAddress(), request.getPort(), this.parentNode);
-                    if (!conn.isAlive()) {
-                        conn.start();
-                    }
                     parentNode.addActiveConnections(conn);
                     System.out.println("Conexão adicionada e iniciada: " + conn);
                 } catch (IOException e) {
@@ -183,5 +178,4 @@ public class NodeListener extends Thread {
                 System.err.println("Erro ao enviar resultados de pesquisa: " + e.getMessage());
             }
         }
-    }
-}
+    } }
